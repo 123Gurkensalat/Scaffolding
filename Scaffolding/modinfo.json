@@ -1,0 +1,13 @@
+{
+    "type": "content",
+    "modid": "scaffolding",
+    "name": "Scaffolding",
+    "authors": [
+        "123Gurkensalat", "k400"
+    ],
+    "description": "Adds scaffolding to the game...soon!",
+    "version": "0.1.0",
+    "dependencies": {
+        "game": ""
+    }
+}
