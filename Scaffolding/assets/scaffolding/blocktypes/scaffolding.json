@@ -1,0 +1,20 @@
+{
+    "code": "scaffolding",
+
+    "creativeinventory": {
+        "general": ["*"]
+    },
+    "shape": {
+        "base": "item/scaffolding"
+    },
+    "texture": {
+        "base": "item/scaffolding"
+    },
+    "resistance": 0.2,
+    "sounds": {
+        "place": "game:block/",
+        "walk": "game:walk/wood"
+    },
+    "climbable": true,
+    "collisionbox": {[0,0,0], [0,0,0]}
+}
