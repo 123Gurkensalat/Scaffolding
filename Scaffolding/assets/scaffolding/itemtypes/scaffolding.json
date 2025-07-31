@@ -1,0 +1,12 @@
+{
+    "code": "scaffolding",
+    "creativeinventory": {
+        "general": ["*"]
+    },
+    "texture": {
+        "base": "item/scaffolding"
+    },
+    "shape": {
+        "base": "item/scaffolding"
+    }
+}
