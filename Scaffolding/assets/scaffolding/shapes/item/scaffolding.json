@@ -16,14 +16,14 @@
 			"name": "scaffolding",
 			"from": [ 0.0, 0.0, 0.0 ],
 			"to": [ 0.0, 0.0, 0.0 ],
-			"uv": [ 2.0, 2.0 ],
+			"uv": [ -2.0, 2.0 ],
 			"faces": {
-				"north": { "texture": "#scaffolding", "uv": [ 2.0, 2.5, 2.25, 2.75 ] },
-				"east": { "texture": "#scaffolding", "uv": [ 2.5, 2.5, 3.0, 3.0 ] },
-				"south": { "texture": "#scaffolding", "uv": [ 3.0, 2.5, 3.5, 3.0 ] },
-				"west": { "texture": "#scaffolding", "uv": [ 3.5, 2.5, 4.0, 3.0 ] },
-				"up": { "texture": "#scaffolding", "uv": [ 2.0, 2.0, 2.5, 2.5 ] },
-				"down": { "texture": "#scaffolding", "uv": [ 2.5, 2.0, 3.0, 2.5 ] }
+				"north": { "texture": "#scaffolding", "uv": [ -2.0, 2.25, -1.75, 2.5 ] },
+				"east": { "texture": "#scaffolding", "uv": [ -1.75, 2.25, -1.5, 2.5 ] },
+				"south": { "texture": "#scaffolding", "uv": [ -1.5, 2.25, -1.25, 2.5 ] },
+				"west": { "texture": "#scaffolding", "uv": [ -1.25, 2.25, -1.0, 2.5 ] },
+				"up": { "texture": "#scaffolding", "uv": [ -2.0, 2.0, -1.75, 2.25 ] },
+				"down": { "texture": "#scaffolding", "uv": [ -1.75, 2.0, -1.5, 2.25 ] }
 			},
 			"children": [
 				{
