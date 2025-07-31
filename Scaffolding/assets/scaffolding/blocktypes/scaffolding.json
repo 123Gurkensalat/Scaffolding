@@ -10,11 +10,23 @@
     "texture": {
         "base": "item/scaffolding"
     },
+    "blockmaterial": "Wood",
     "resistance": 0.2,
     "sounds": {
         "place": "game:block/stickplace",
         "walk": "game:walk/wood"
     },
     "climbable": true,
-    "collisionbox": {x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 0}
+    "collisionbox": {x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 0},
+    "sidesolid": {
+		"all": false
+	},
+	"sideopaque": {
+		"all": false
+	},
+    "rainPermeable": true,
+    "lightAbsorption": 0,
+    "drops": [
+		{ "type": "block", "code": "scaffolding", "quantity": { "avg": 1 }  }
+	],
 }
