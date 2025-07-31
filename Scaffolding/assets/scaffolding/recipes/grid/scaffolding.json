@@ -1,0 +1,15 @@
+{
+  "ingredientPattern": "SSS,S_S,S_S",
+  "width": 3,
+  "height": 3,
+  "ingredients": {
+    "S": {
+      "type": "item",
+      "code": "game:stick"
+    }
+  },
+  "output": {
+    "type": "block",
+    "code": "scaffolding"
+  }
+}
