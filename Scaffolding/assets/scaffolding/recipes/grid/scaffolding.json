@@ -1,15 +1,16 @@
 {
-  "ingredientPattern": "SSS,S_S,S_S",
+  "ingredientPattern": "_S_,S_S,___",
   "width": 3,
   "height": 3,
   "ingredients": {
     "S": {
       "type": "item",
-      "code": "game:stick"
+      "code": "game:plank-*"
     }
   },
   "output": {
     "type": "block",
-    "code": "scaffolding"
+    "code": "scaffolding",
+    "quantity": 2
   }
 }
