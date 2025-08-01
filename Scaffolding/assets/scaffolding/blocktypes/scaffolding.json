@@ -10,6 +10,9 @@
         "generic": { "base":"game:block/wood/planks/generic"},
         "rope": {"base":"game:block/locustnest/stalagmite/rope"}
     },
+    "behaviors": [
+        {"name": "Unstable"}
+    ],
     "blockmaterial": "Wood",
     "resistance": 0.2,
     "materialdensity": 600,
@@ -18,9 +21,10 @@
         "walk": "game:walk/wood"
     },
     "climbable": true,
-    "collisionboxes": [{x1:0,y1:0,z1:0,x2:0,y2:0,z2:0}, {x1:1,y1:1,z1:1,x2:1,y2:1,z2:1}],
+    "collisionboxes": [{x1:0,y1:0,z1:0,x2:0,y2:0,z2:0}, {x1:1,y1:0,z1:1,x2:1,y2:0,z2:1}],
     "sidesolid": {
-		"all": false
+		"all": false,
+        "up": true
 	},
 	"sideopaque": {
 		"all": false
