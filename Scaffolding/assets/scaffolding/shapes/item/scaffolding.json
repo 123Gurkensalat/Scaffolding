@@ -1,6 +1,6 @@
 {
 	"editor": {
-		"collapsedPaths": "Root/wood/Nside,Root/scaffolding/Wside,Root/scaffolding/top,Root/wood/Wside,Root/scaffolding/Nside4,Root/scaffolding/Nside3,Root/scaffolding/Nside2,Root/scaffolding/Nside,Root/wood/Sside,Root/wood/Eside,Root/scaffolding/Eside,Root/scaffolding/Sside",
+		"collapsedPaths": "Root/wood/Eside,Root/scaffolding/Wside,Root/scaffolding/Eside,Root/scaffolding/top,Root/scaffolding/Sside,Root/wood/Wside,Root/scaffolding/Nside4,Root/scaffolding/Nside3,Root/scaffolding/Nside2,Root/scaffolding/Nside",
 		"allAngles": false,
 		"entityTextureMode": false
 	},
@@ -9,8 +9,6 @@
 	"textureSizes": {
 	},
 	"textures": {
-		"rope": "sr/share/vintagestory/assets/survival/textures/block/locustnest/stalagmite/rope",
-		"generic": "sr/share/vintagestory/assets/survival/textures/block/wood/planks/generic"
 	},
 	"elements": [
 		{
@@ -386,9 +384,9 @@
 				},
 				{
 					"name": "knot5",
-					"from": [ -0.6, 6.9, 7.2 ],
-					"to": [ 0.65, 8.65, 8.95 ],
-					"rotationOrigin": [ 0.0, 7.8, 8.0 ],
+					"from": [ -0.6, 7.0, 7.2 ],
+					"to": [ 0.65, 8.75, 8.95 ],
+					"rotationOrigin": [ 0.0, 7.9, 8.0 ],
 					"rotationX": 45.0,
 					"faces": {
 						"north": { "texture": "#rope", "uv": [ 0.0, 1.5, 1.0, 3.0 ] },
@@ -401,9 +399,9 @@
 				},
 				{
 					"name": "knot6",
-					"from": [ 15.4, 6.9, 7.2 ],
-					"to": [ 16.65, 8.65, 8.95 ],
-					"rotationOrigin": [ 16.0, 7.8, 8.0 ],
+					"from": [ 15.4, 7.0, 7.2 ],
+					"to": [ 16.65, 8.75, 8.95 ],
+					"rotationOrigin": [ 16.0, 7.9, 8.0 ],
 					"rotationX": 45.0,
 					"faces": {
 						"north": { "texture": "#rope", "uv": [ 0.0, 1.5, 1.0, 3.0 ] },
@@ -416,9 +414,9 @@
 				},
 				{
 					"name": "knot7",
-					"from": [ 7.1, 6.8, -0.65 ],
-					"to": [ 8.85, 8.55, 0.6 ],
-					"rotationOrigin": [ 7.9, 7.7, 0.2 ],
+					"from": [ 7.1, 6.9, -0.65 ],
+					"to": [ 8.85, 8.65, 0.6 ],
+					"rotationOrigin": [ 7.9, 7.8, 0.2 ],
 					"rotationZ": 45.0,
 					"faces": {
 						"north": { "texture": "#rope", "uv": [ 0.0, 1.0, 1.5, 2.5 ] },
@@ -431,9 +429,9 @@
 				},
 				{
 					"name": "knot8",
-					"from": [ 7.1, 6.8, 15.35 ],
-					"to": [ 8.85, 8.55, 16.6 ],
-					"rotationOrigin": [ 7.9, 7.7, 16.2 ],
+					"from": [ 7.1, 6.9, 15.35 ],
+					"to": [ 8.85, 8.65, 16.6 ],
+					"rotationOrigin": [ 7.9, 7.8, 16.2 ],
 					"rotationZ": 45.0,
 					"faces": {
 						"north": { "texture": "#rope", "uv": [ 0.0, 1.0, 1.5, 2.5 ] },
