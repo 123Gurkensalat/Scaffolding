@@ -6,8 +6,9 @@
     "shape": {
         "base": "item/scaffolding"
     },
-    "texture": {
-        "base": "item/scaffolding"
+    "textures": {
+        "generic": { "base":"game:block/wood/planks/generic"},
+        "rope": {"base":"game:block/locustnest/stalagmite/rope"}
     },
     "blockmaterial": "Wood",
     "resistance": 0.2,
