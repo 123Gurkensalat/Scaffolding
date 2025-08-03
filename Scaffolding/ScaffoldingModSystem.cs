@@ -1,16 +1,16 @@
 using Vintagestory.API.Common;
 
 using Scaffolding.Blocks;
+using Scaffolding.BlockEntities;
 
 namespace Scaffolding
 {
     public class ScaffoldingModSystem : ModSystem
     {
-        // Called on server and client
         public override void Start(ICoreAPI api)
         {
-            Mod.Logger.Chat("Scaffolding loaded.");
-            api.RegisterBlockClass(Mod.Info.ModID + ".scaff", typeof(BlockScaffolding));
+            api.RegisterBlockClass(Mod.Info.ModID + ".scaffolding", typeof(BlockScaffolding));
+            api.RegisterBlockEntityClass(Mod.Info.ModID + ".scaffolding", typeof(BlockEntityScaffolding));
         }
     }
 }

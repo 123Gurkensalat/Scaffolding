@@ -1,5 +1,7 @@
 {
     "code": "scaffolding",
+    "class": "scaffolding.scaffolding",
+    "entityClass": "scaffolding.scaffolding",
     "creativeinventory": {
         "general": ["*"]
     },
