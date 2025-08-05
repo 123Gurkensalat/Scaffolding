@@ -2,7 +2,6 @@ using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 
 using System;
-using System.Collections.Generic;
 
 using Scaffolding.BlockEntities;
 
@@ -14,7 +13,8 @@ namespace Scaffolding.Blocks
         {
             if (firstTick)
             {
-                api.Logger.Chat("" + GetBlockEntity(blockSel.Position).Stability);
+                var entity = GetBlockEntity(blockSel.Position);
+                api.Logger.Chat("Stability: " + entity.Stability + "\t RootXYZ: " + (entity.Root?.ToString() ?? "null"));
             }
             base.OnBeingLookedAt(byPlayer, blockSel, firstTick);
         }
@@ -103,7 +103,7 @@ namespace Scaffolding.Blocks
 
         public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
         {
-            GetBlockEntity(pos)?.OnDestroyed(byPlayer);
+            GetBlockEntity(pos)?.OnDestroy(byPlayer);
             base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
         }
     }
