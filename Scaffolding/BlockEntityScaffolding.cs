@@ -1,8 +1,10 @@
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
-using Vintagestory.GameContent;
+using Vintagestory.API.Datastructures;
 
 using System.Collections.Generic;
+
+using Scaffolding.Blocks;
 
 
 namespace Scaffolding.BlockEntities
@@ -22,7 +24,7 @@ namespace Scaffolding.BlockEntities
             var (maxStability, maxStabilityPos) = GetMaxStability();
             if (maxStability < 1)
             {
-                var fallingEntity = new EntityBlockFalling(Block, this, Pos, null, 0, canFallSideways: false, 0);
+                var fallingEntity = new EntityFallingScaffolding(Block, this, Pos);
                 World.SpawnEntity(fallingEntity);
                 return;
             }
@@ -31,9 +33,12 @@ namespace Scaffolding.BlockEntities
             // block is root when it has max stability and is placed on solid ground
             bool isRoot = maxStability == MaxStability && GetBlockEntity(Pos.DownCopy()) == null;
             Root = (isRoot) ? Pos : GetBlockEntity(maxStabilityPos).Root;
+            MarkDirty();
             PropogateStability();
         }
 
+        /// Checks all neighbors if they can increase their stability when attaching to this block
+        /// And calls their PropogateStability()
         private void PropogateStability()
         {
             var currentEntity = GetBlockEntity(Pos.UpCopy());
@@ -56,10 +61,10 @@ namespace Scaffolding.BlockEntities
             }
         }
 
+        /// Searches for the most stable neighbor
+        /// Calculates the resulting stability when attaching to it and returns it
         private (int max, BlockPos maxPos) GetMaxStability()
         {
-            // set maxStability default to lower scaffoldings stability
-            // then search for better alternatives on the sides
             var currentEntity = GetBlockEntity(Pos.DownCopy());
             int maxStability = int.MinValue;
             if (currentEntity != null)
@@ -97,34 +102,20 @@ namespace Scaffolding.BlockEntities
         {
             if (Root == null) return;
 
-            var stack = new Stack<(BlockPos, bool)>();
+            var stack = new Stack<BlockPos>();
             var visited = new HashSet<BlockPos>();
 
-            stack.Push((Pos, false));
+            var nodesToCheck = new Stack<BlockEntityScaffolding>();
+
+            stack.Push(Pos);
 
             while (stack.Count > 0)
             {
-                var (node, processed) = stack.Pop();
+                var node = stack.Pop();
                 var nodeEntity = GetBlockEntity(node);
-
-                if (processed)
-                {
-                    var (newRoot, newStability) = nodeEntity.SearchForNewRoot();
-                    if (newRoot == null || newStability < 1)
-                    {
-                        World.BlockAccessor.BreakBlock(node, byPlayer);
-                    }
-                    else
-                    {
-                        nodeEntity.Root = newRoot;
-                        nodeEntity.Stability = newStability;
-                    }
-                    continue;
-                }
 
                 if (visited.Contains(node)) continue;
                 visited.Add(node);
-                stack.Push((node, true));
 
                 BlockEntityScaffolding currentEntity;
                 BlockPos up = node.UpCopy();
@@ -137,7 +128,8 @@ namespace Scaffolding.BlockEntities
                     }
                     else if (currentEntity.Stability == nodeEntity.Stability)
                     {
-                        stack.Push((up, false));
+                        stack.Push(up);
+                        nodesToCheck.Push(currentEntity);
                     }
                 }
 
@@ -153,17 +145,34 @@ namespace Scaffolding.BlockEntities
                     else if (currentEntity.Stability < nodeEntity.Stability
                             && currentEntity.Root.Equals(nodeEntity.Root))
                     {
-                        stack.Push((neighbor, false));
+                        stack.Push(neighbor);
+                        nodesToCheck.Push(currentEntity);
                     }
                 }
                 nodeEntity.Root = null;
             }
+
+            // check if they have a stable neighbor
+            foreach (var node in nodesToCheck)
+            {
+                var (newRoot, newStability) = node.SearchForNewRoot();
+                if (newRoot == null || newStability < 1)
+                {
+                    World.BlockAccessor.BreakBlock(node.Pos, byPlayer);
+                }
+                else
+                {
+                    node.Root = newRoot;
+                    node.Stability = newStability;
+                }
+                continue;
+            }
         }
 
+        /// Searches neighbors who are not attached to it or its base.
+        /// Returns best possible match or null
         private (BlockPos root, int stability) SearchForNewRoot()
         {
-            // set maxStability default to lower scaffoldings stability
-            // then search for better alternatives on the sides
             var currentEntity = GetBlockEntity(Pos.DownCopy());
             int newStability = int.MinValue;
             BlockPos newRoot = null;
@@ -193,6 +202,25 @@ namespace Scaffolding.BlockEntities
             return new BlockPos[] {
                 Pos.NorthCopy(), Pos.EastCopy(), Pos.SouthCopy(), Pos.WestCopy()
             };
+        }
+
+        public override void ToTreeAttributes(ITreeAttribute tree)
+        {
+            base.ToTreeAttributes(tree);
+
+            tree.SetInt("stability", Stability);
+            if (Root != null)
+            {
+                tree.SetBlockPos("root", Root);
+            }
+        }
+
+        public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve)
+        {
+            base.FromTreeAttributes(tree, worldAccessForResolve);
+
+            Stability = tree.GetInt("stability", 0);
+            Root = tree.GetBlockPos("root", null);
         }
     }
 }

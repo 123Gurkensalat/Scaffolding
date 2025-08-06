@@ -4,6 +4,7 @@ using Vintagestory.API.MathTools;
 using System;
 
 using Scaffolding.BlockEntities;
+using Vintagestory.API.Datastructures;
 
 namespace Scaffolding.Blocks
 {
@@ -14,7 +15,10 @@ namespace Scaffolding.Blocks
             if (firstTick)
             {
                 var entity = GetBlockEntity(blockSel.Position);
-                api.Logger.Chat("Stability: " + entity.Stability + "\t RootXYZ: " + (entity.Root?.ToString() ?? "null"));
+                if (entity != null)
+                {
+                    api.Logger.Chat("Stability: " + entity.Stability + "\t RootXYZ: " + (entity.Root?.ToString() ?? "null"));
+                }
             }
             base.OnBeingLookedAt(byPlayer, blockSel, firstTick);
         }
@@ -82,7 +86,7 @@ namespace Scaffolding.Blocks
 
             // place scaffolding and remove one from the players inventory
             world.BlockAccessor.SetBlock(Id, current_pos);
-            if (byPlayer.WorldData.CurrentGameMode != EnumGameMode.Creative)
+            if (byPlayer != null && byPlayer.WorldData.CurrentGameMode != EnumGameMode.Creative)
             {
                 byPlayer.InventoryManager.ActiveHotbarSlot.TakeOut(1);
             }

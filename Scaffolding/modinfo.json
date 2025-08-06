@@ -3,10 +3,10 @@
     "modid": "scaffolding",
     "name": "Scaffolding",
     "authors": [
-        "123Gurkensalat", "k400"
+        "123Gurkensalat"
     ],
     "description": "Adds scaffolding to the game...soon!",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "dependencies": {
         "game": ""
     }
