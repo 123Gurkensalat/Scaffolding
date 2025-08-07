@@ -4,7 +4,6 @@ using Vintagestory.API.MathTools;
 using System;
 
 using Scaffolding.BlockEntities;
-using Vintagestory.API.Datastructures;
 
 namespace Scaffolding.Blocks
 {
@@ -98,6 +97,28 @@ namespace Scaffolding.Blocks
             // otherwise, block will fall
             base.OnBlockPlaced(world, blockPos, byItemStack);
             GetBlockEntity(blockPos).OnBlockPlaced();
+        }
+
+        public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)
+        {
+            base.OnNeighbourBlockChange(world, pos, neibpos);
+
+            // only interested in blocks below
+            if (neibpos.Y != pos.Y - 1) return;
+            // if block below is scaffolding, it means the case is already handled
+            if (world.BlockAccessor.GetBlockId(neibpos) == Id) return;
+
+            var entity = GetBlockEntity(pos);
+            if (entity == null) return;
+
+            if (entity.IsRoot)
+            {
+                entity.OnBlockBelowDestroyed();
+            }
+            else
+            {
+                entity.OnBlockPlaced();
+            }
         }
 
         private BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)

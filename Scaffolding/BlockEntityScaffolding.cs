@@ -11,9 +11,10 @@ namespace Scaffolding.BlockEntities
 {
     internal class BlockEntityScaffolding : BlockEntity
     {
-        private const int MaxStability = 4;
+        public static int MaxStability = 0;
         public int Stability { get; set; }
         public BlockPos Root = null;
+        public bool IsRoot => Root?.Equals(Pos) ?? false;
 
         private IWorldAccessor World => Api.World;
 
@@ -33,7 +34,6 @@ namespace Scaffolding.BlockEntities
             // block is root when it has max stability and is placed on solid ground
             bool isRoot = maxStability == MaxStability && GetBlockEntity(Pos.DownCopy()) == null;
             Root = (isRoot) ? Pos : GetBlockEntity(maxStabilityPos).Root;
-            MarkDirty();
             PropogateStability();
         }
 
@@ -41,6 +41,7 @@ namespace Scaffolding.BlockEntities
         /// And calls their PropogateStability()
         private void PropogateStability()
         {
+            MarkDirty();
             var currentEntity = GetBlockEntity(Pos.UpCopy());
             if (currentEntity?.Stability <= Stability)
             {
@@ -102,6 +103,96 @@ namespace Scaffolding.BlockEntities
         {
             if (Root == null) return;
 
+            var reachableNodes = MarkAndGetReachable();
+
+            // check if they have a stable neighbor
+            foreach (var node in reachableNodes)
+            {
+                var (newRoot, newStability) = node.SearchForNewRoot();
+                if (newRoot == null || newStability < 1)
+                {
+                    World.BlockAccessor.BreakBlock(node.Pos, byPlayer);
+                }
+                else
+                {
+                    node.Root = newRoot;
+                    node.Stability = newStability;
+                    node.MarkDirty();
+                }
+            }
+        }
+
+        /// Searches neighbors who are not attached to it or its base.
+        /// Returns best possible match or null
+        private (BlockPos root, int stability) SearchForNewRoot()
+        {
+            var currentEntity = GetBlockEntity(Pos.DownCopy());
+            int newStability = int.MinValue;
+            BlockPos newRoot = null;
+            if (currentEntity != null && currentEntity.Root != null)
+            {
+                newStability = currentEntity.Stability;
+                newRoot = GetBlockEntity(Pos.DownCopy()).Root;
+            }
+
+            foreach (var neighbor in Neighbors())
+            {
+                currentEntity = GetBlockEntity(neighbor);
+                if (currentEntity == null) continue;
+                if (currentEntity.Root == null) continue;
+
+                if (newStability < currentEntity.Stability - 1)
+                {
+                    newStability = currentEntity.Stability - 1;
+                    newRoot = GetBlockEntity(neighbor).Root;
+                }
+            }
+            return (newRoot, newStability);
+        }
+
+        public void OnBlockBelowDestroyed()
+        {
+            var reachableNodes = MarkAndGetReachable();
+
+            // check if they have a stable neighbor
+            foreach (var node in reachableNodes)
+            {
+                var (newRoot, newStability) = node.SearchForNewRoot();
+                if (newRoot != null && newStability > 0)
+                {
+                    node.Root = newRoot;
+                    node.Stability = newStability;
+                    node.MarkDirty();
+                }
+            }
+
+            // get new stability for current Node and update surrounding nodes
+            var (stability, position) = GetMaxStability();
+
+            var root = GetBlockEntity(position)?.Root ?? null;
+            if (root != null && stability > 0)
+            {
+                Stability = stability;
+                Root = root;
+                PropogateStability();
+            }
+            else
+            {
+                World.BlockAccessor.BreakBlock(Pos, null);
+            }
+
+            // destroy every scaffolding that has to low stability
+            foreach (var node in reachableNodes)
+            {
+                if (node.Root == null || node.Stability < 1)
+                {
+                    World.BlockAccessor.BreakBlock(node.Pos, null);
+                }
+            }
+        }
+
+        private Stack<BlockEntityScaffolding> MarkAndGetReachable()
+        {
             var stack = new Stack<BlockPos>();
             var visited = new HashSet<BlockPos>();
 
@@ -150,53 +241,10 @@ namespace Scaffolding.BlockEntities
                     }
                 }
                 nodeEntity.Root = null;
+                nodeEntity.Stability = 0;
             }
-
-            // check if they have a stable neighbor
-            foreach (var node in nodesToCheck)
-            {
-                var (newRoot, newStability) = node.SearchForNewRoot();
-                if (newRoot == null || newStability < 1)
-                {
-                    World.BlockAccessor.BreakBlock(node.Pos, byPlayer);
-                }
-                else
-                {
-                    node.Root = newRoot;
-                    node.Stability = newStability;
-                }
-                continue;
-            }
+            return nodesToCheck;
         }
-
-        /// Searches neighbors who are not attached to it or its base.
-        /// Returns best possible match or null
-        private (BlockPos root, int stability) SearchForNewRoot()
-        {
-            var currentEntity = GetBlockEntity(Pos.DownCopy());
-            int newStability = int.MinValue;
-            BlockPos newRoot = null;
-            if (currentEntity != null && currentEntity.Root != null)
-            {
-                newStability = currentEntity.Stability;
-                newRoot = GetBlockEntity(Pos.DownCopy()).Root;
-            }
-
-            foreach (var neighbor in Neighbors())
-            {
-                currentEntity = GetBlockEntity(neighbor);
-                if (currentEntity == null) continue;
-                if (currentEntity.Root == null) continue;
-
-                if (newStability < currentEntity.Stability - 1)
-                {
-                    newStability = currentEntity.Stability - 1;
-                    newRoot = GetBlockEntity(neighbor).Root;
-                }
-            }
-            return (newRoot, newStability);
-        }
-
         public BlockPos[] Neighbors()
         {
             return new BlockPos[] {
