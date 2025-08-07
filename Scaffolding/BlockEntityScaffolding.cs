@@ -3,6 +3,7 @@ using Vintagestory.API.MathTools;
 using Vintagestory.API.Datastructures;
 
 using System.Collections.Generic;
+using System;
 
 using Scaffolding.Blocks;
 
@@ -37,22 +38,22 @@ namespace Scaffolding.BlockEntities
             PropogateStability();
         }
 
-        /// Checks all neighbors if they can increase their stability when attaching to this block
+        /// Checks all neighbours if they can increase their stability when attaching to this block
         /// And calls their PropogateStability()
         private void PropogateStability()
         {
             MarkDirty();
             var currentEntity = GetBlockEntity(Pos.UpCopy());
-            if (currentEntity?.Stability <= Stability)
+            if (currentEntity?.Stability < Stability)
             {
                 currentEntity.Stability = Stability;
                 currentEntity.Root = Root;
                 currentEntity.PropogateStability();
             }
 
-            foreach (var neighbor in Neighbors())
+            foreach (var neighbour in Neighbours())
             {
-                currentEntity = GetBlockEntity(neighbor);
+                currentEntity = GetBlockEntity(neighbour);
                 if (currentEntity?.Stability < Stability - 1)
                 {
                     currentEntity.Stability = Stability - 1;
@@ -62,31 +63,33 @@ namespace Scaffolding.BlockEntities
             }
         }
 
-        /// Searches for the most stable neighbor
+        /// Searches for the most stable neighbour
         /// Calculates the resulting stability when attaching to it and returns it
         private (int max, BlockPos maxPos) GetMaxStability()
         {
             var currentEntity = GetBlockEntity(Pos.DownCopy());
             int maxStability = int.MinValue;
+            BlockPos maxPos = null;
             if (currentEntity != null)
             {
                 maxStability = currentEntity.Stability;
+                maxPos = currentEntity.Pos;
             }
             else if (World.BlockAccessor.IsSideSolid(Pos.X, Pos.Y - 1, Pos.Z, BlockFacing.UP))
             {
                 maxStability = MaxStability;
+                maxPos = Pos.DownCopy();
             }
 
-            BlockPos maxPos = Pos.DownCopy();
-            foreach (var neighbor in Neighbors())
+            foreach (var neighbour in Neighbours())
             {
-                currentEntity = GetBlockEntity(neighbor);
+                currentEntity = GetBlockEntity(neighbour);
                 if (currentEntity == null) continue;
 
                 if (maxStability < currentEntity.Stability - 1)
                 {
                     maxStability = currentEntity.Stability - 1;
-                    maxPos = neighbor.Copy();
+                    maxPos = neighbour;
                 }
             }
 
@@ -103,68 +106,25 @@ namespace Scaffolding.BlockEntities
         {
             if (Root == null) return;
 
-            var reachableNodes = MarkAndGetReachable();
+            var reachableNodes = UpdateReachable(() =>
+            {
+                Root = null;
+                World.BlockAccessor.BreakBlock(Pos, byPlayer);
+            });
 
-            // check if they have a stable neighbor
+            // check if they have a stable neighbour
             foreach (var node in reachableNodes)
             {
-                var (newRoot, newStability) = node.SearchForNewRoot();
-                if (newRoot == null || newStability < 1)
+                if (node.Root == null || node.Stability < 1)
                 {
                     World.BlockAccessor.BreakBlock(node.Pos, byPlayer);
                 }
-                else
-                {
-                    node.Root = newRoot;
-                    node.Stability = newStability;
-                    node.MarkDirty();
-                }
             }
-        }
-
-        /// Searches neighbors who are not attached to it or its base.
-        /// Returns best possible match or null
-        private (BlockPos root, int stability) SearchForNewRoot()
-        {
-            var currentEntity = GetBlockEntity(Pos.DownCopy());
-            int newStability = int.MinValue;
-            BlockPos newRoot = null;
-            if (currentEntity != null && currentEntity.Root != null)
-            {
-                newStability = currentEntity.Stability;
-                newRoot = GetBlockEntity(Pos.DownCopy()).Root;
-            }
-
-            foreach (var neighbor in Neighbors())
-            {
-                currentEntity = GetBlockEntity(neighbor);
-                if (currentEntity == null) continue;
-                if (currentEntity.Root == null) continue;
-
-                if (newStability < currentEntity.Stability - 1)
-                {
-                    newStability = currentEntity.Stability - 1;
-                    newRoot = GetBlockEntity(neighbor).Root;
-                }
-            }
-            return (newRoot, newStability);
         }
 
         public void OnBlockBelowDestroyed()
         {
-            var reachableNodes = MarkAndGetReachable();
-
-            // check if they have a stable neighbor
-            foreach (var node in reachableNodes)
-            {
-                var (newRoot, newStability) = node.SearchForNewRoot();
-                if (newRoot != null && newStability > 0)
-                {
-                    node.Root = newRoot;
-                    node.Stability = newStability;
-                    node.MarkDirty();
-                }
-            }
+            var reachableNodes = UpdateReachable();
 
             // get new stability for current Node and update surrounding nodes
             var (stability, position) = GetMaxStability();
@@ -191,23 +151,23 @@ namespace Scaffolding.BlockEntities
             }
         }
 
-        private Stack<BlockEntityScaffolding> MarkAndGetReachable()
+        private List<BlockEntityScaffolding> UpdateReachable(Action afterMark = null)
         {
-            var stack = new Stack<BlockPos>();
+            var queue = new Queue<BlockPos>();
             var visited = new HashSet<BlockPos>();
+            var reachableNodes = new List<BlockEntityScaffolding>();
+            var neighbourNodes = new List<BlockEntityScaffolding>();
 
-            var nodesToCheck = new Stack<BlockEntityScaffolding>();
-
-            stack.Push(Pos);
-
-            while (stack.Count > 0)
+            queue.Enqueue(Pos);
+            while (queue.Count > 0)
             {
-                var node = stack.Pop();
+                var node = queue.Dequeue();
                 var nodeEntity = GetBlockEntity(node);
 
                 if (visited.Contains(node)) continue;
                 visited.Add(node);
 
+                // add above block to reachable
                 BlockEntityScaffolding currentEntity;
                 BlockPos up = node.UpCopy();
                 if (!visited.Contains(up))
@@ -219,33 +179,66 @@ namespace Scaffolding.BlockEntities
                     }
                     else if (currentEntity.Stability == nodeEntity.Stability)
                     {
-                        stack.Push(up);
-                        nodesToCheck.Push(currentEntity);
+                        queue.Enqueue(up);
+                        reachableNodes.Add(currentEntity);
                     }
                 }
 
-                foreach (var neighbor in nodeEntity.Neighbors())
+                // add below block to neighbour
+                BlockPos down = node.DownCopy();
+                if (!visited.Contains(down))
                 {
-                    if (visited.Contains(neighbor)) continue;
-
-                    currentEntity = GetBlockEntity(neighbor);
+                    currentEntity = GetBlockEntity(down);
                     if (currentEntity == null)
                     {
-                        visited.Add(neighbor);
+                        visited.Add(down);
+                    }
+                    else
+                    {
+                        neighbourNodes.Add(currentEntity);
+                    }
+                }
+
+                // add side blocks to reachable and neighbour
+                foreach (var neighbour in nodeEntity.Neighbours())
+                {
+                    if (visited.Contains(neighbour)) continue;
+
+                    currentEntity = GetBlockEntity(neighbour);
+                    if (currentEntity == null)
+                    {
+                        visited.Add(neighbour);
                     }
                     else if (currentEntity.Stability < nodeEntity.Stability
                             && currentEntity.Root.Equals(nodeEntity.Root))
                     {
-                        stack.Push(neighbor);
-                        nodesToCheck.Push(currentEntity);
+                        queue.Enqueue(neighbour);
+                        reachableNodes.Add(currentEntity);
+                    }
+                    else if (currentEntity.Stability >= nodeEntity.Stability
+                            || !currentEntity.Root.Equals(nodeEntity.Root))
+                    {
+                        neighbourNodes.Add(currentEntity);
+                        visited.Add(neighbour);
                     }
                 }
+
                 nodeEntity.Root = null;
                 nodeEntity.Stability = 0;
             }
-            return nodesToCheck;
+
+            afterMark?.Invoke();
+
+            Api.Logger.Chat("Neighbour count: {0}", neighbourNodes.Count);
+
+            foreach (var node in neighbourNodes)
+            {
+                node.PropogateStability();
+            }
+
+            return reachableNodes;
         }
-        public BlockPos[] Neighbors()
+        public BlockPos[] Neighbours()
         {
             return new BlockPos[] {
                 Pos.NorthCopy(), Pos.EastCopy(), Pos.SouthCopy(), Pos.WestCopy()

@@ -9,6 +9,4 @@ Currently this mod adds:
 
 What I would like to add:
 
-- Customize maximum stability to allow for longer/shorter bridges
-- Translations
 - Better visuals. Especially for bridges
