@@ -1,7 +1,7 @@
 {
     "code": "scaffolding",
-    "class": "scaffolding.scaffolding",
-    "entityClass": "scaffolding.scaffolding",
+    "class": "scaffolding:scaffolding",
+    "entityClass": "scaffolding:scaffolding",
     "creativeinventory": {
         "general": ["*"]
     },
@@ -19,8 +19,7 @@
         "place": "game:block/stickplace",
         "walk": "game:walk/wood"
     },
-    "climbable": true,
-    "collisionboxes": [{x1:0,y1:0,z1:0,x2:0,y2:0,z2:0}, {x1:1,y1:0,z1:1,x2:1,y2:0,z2:1}],
+    "collisionbox": null,
 	"sideopaque": {
 		"all": false
 	},

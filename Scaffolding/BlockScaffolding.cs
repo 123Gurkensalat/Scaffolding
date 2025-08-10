@@ -4,6 +4,7 @@ using Vintagestory.API.MathTools;
 using System;
 
 using Scaffolding.BlockEntities;
+using Vintagestory.API.Common.Entities;
 
 namespace Scaffolding.Blocks
 {
