@@ -19,6 +19,7 @@
         "place": "game:block/stickplace",
         "walk": "game:walk/wood"
     },
+    "climbable": true,
     "collisionbox": null,
 	"sideopaque": {
 		"all": false

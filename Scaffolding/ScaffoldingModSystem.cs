@@ -1,20 +1,26 @@
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
-using Vintagestory.API.Common.Entities;
 using Scaffolding.Blocks;
 using Scaffolding.BlockEntities;
+using Scaffolding.Patches;
+
+using HarmonyLib;
 using Vintagestory.API.Client;
 
 namespace Scaffolding;
 
 public class ScaffoldingModSystem : ModSystem
 {
+    private Harmony harmony;
+
     public override void Start(ICoreAPI api)
     {
         base.Start(api);
         api.RegisterBlockClass("scaffolding:scaffolding", typeof(BlockScaffolding));
         api.RegisterBlockEntityClass("scaffolding:scaffolding", typeof(BlockEntityScaffolding));
-        api.RegisterEntityBehaviorClass("scaffolding:climb", typeof(PlayerPhysicsHandler));
+        PlayerPatches.Api = api;
+        harmony = new Harmony(Mod.Info.ModID);
+        PlayerPatches.ApplyAll(harmony);
     }
 
     public override void StartServerSide(ICoreServerAPI api)
@@ -24,24 +30,18 @@ public class ScaffoldingModSystem : ModSystem
         // load mod config
         ModConfig.LoadOrCreate(api);
         BlockEntityScaffolding.MaxStability = ModConfig.Data.MaxStability;
-
-        api.Event.PlayerJoin += (IServerPlayer player) => AddPlayerBehavior(player.Entity, api);
     }
-
 
     public override void StartClientSide(ICoreClientAPI api)
     {
         base.StartClientSide(api);
 
-        api.Event.OnEntitySpawn += (Entity entity) => AddPlayerBehavior(entity);
-        api.Event.OnEntityLoaded += (Entity entity) => AddPlayerBehavior(entity);
+        // patch client
     }
 
-    private void AddPlayerBehavior(Entity entity, ICoreServerAPI api = null)
+    public override void Dispose()
     {
-        if (entity is EntityPlayer player)
-        {
-            player.AddBehavior(new PlayerPhysicsHandler(player, api));
-        }
+        harmony?.UnpatchAll(Mod.Info.ModID);
+        base.Dispose();
     }
 }
