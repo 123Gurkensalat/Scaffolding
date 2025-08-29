@@ -102,9 +102,9 @@ namespace Scaffolding.BlockEntities
         }
 
         // TODO: make this an IEnumerator to destroy it over multiple frames
-        public void OnDestroy(IPlayer byPlayer)
+        public bool OnDestroy(IPlayer byPlayer)
         {
-            if (Root == null) return;
+            if (Root == null) return true;
 
             var reachableNodes = UpdateReachable(() =>
             {
@@ -120,6 +120,7 @@ namespace Scaffolding.BlockEntities
                     World.BlockAccessor.BreakBlock(node.Pos, byPlayer);
                 }
             }
+            return false;
         }
 
         public void OnBlockBelowDestroyed()
@@ -228,8 +229,6 @@ namespace Scaffolding.BlockEntities
             }
 
             afterMark?.Invoke();
-
-            Api.Logger.Chat("Neighbour count: {0}", neighbourNodes.Count);
 
             foreach (var node in neighbourNodes)
             {

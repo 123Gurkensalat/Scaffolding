@@ -10,19 +10,6 @@ namespace Scaffolding.Blocks
 {
     internal class BlockScaffolding : Block
     {
-        public override void OnBeingLookedAt(IPlayer byPlayer, BlockSelection blockSel, bool firstTick)
-        {
-            if (firstTick)
-            {
-                var entity = GetBlockEntity(blockSel.Position);
-                if (entity != null)
-                {
-                    api.Logger.Chat("Stability: " + entity.Stability + "\t RootXYZ: " + (entity.Root?.ToString() ?? "null"));
-                }
-            }
-            base.OnBeingLookedAt(byPlayer, blockSel, firstTick);
-        }
-
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
         {
             // when shift + rmb scaffolding -> normal block behaviour
@@ -129,8 +116,10 @@ namespace Scaffolding.Blocks
 
         public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
         {
-            GetBlockEntity(pos)?.OnDestroy(byPlayer);
-            base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
+            if (GetBlockEntity(pos)?.OnDestroy(byPlayer) ?? true)
+            {
+                base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
+            }
         }
     }
 }
