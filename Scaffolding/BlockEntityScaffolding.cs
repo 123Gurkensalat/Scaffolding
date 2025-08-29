@@ -128,10 +128,9 @@ internal class BlockEntityScaffolding : BlockEntity
 
         // get new stability for current Node and update surrounding nodes
         var (stability, position) = GetMaxStability();
-
-        var root = GetBlockEntity(position)?.Root ?? null;
-        if (root != null && stability > 0)
+        if (stability > 0)
         {
+            var root = GetBlockEntity(position)?.Root ?? null;
             Stability = stability;
             Root = root;
             PropogateStability();
