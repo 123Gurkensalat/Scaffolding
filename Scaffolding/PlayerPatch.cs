@@ -68,6 +68,7 @@ public static class PlayerPatches
                 yield return new CodeInstruction(OpCodes.Ldloc, blockIndex);
                 yield return new CodeInstruction(OpCodes.Ldloc, accessorIndex);
                 yield return new CodeInstruction(OpCodes.Ldloc, posIndex);
+                yield return new CodeInstruction(OpCodes.Ldarg_0);
 
                 // Call the helper method: InjectCustomCollisionBoxes(Cuboidf[], Block, IBlockAccessor, BlockPos)
                 yield return new CodeInstruction(OpCodes.Call, injectMethod);
@@ -109,11 +110,13 @@ public static class PlayerPatches
     /// <summary>
     /// Receives the original collision boxes and the block instance
     /// </summary>
-    public static Cuboidf[] InjectCustomCollisionBoxes(Cuboidf[] original, Block block, IBlockAccessor accessor, BlockPos pos)
+    public static Cuboidf[] InjectCustomCollisionBoxes(Cuboidf[] original, Block block, IBlockAccessor accessor, BlockPos pos, object instance)
     {
-        if (block == null || block.Code == null || accessor == null || pos == null) return original;
+        if (instance is not EntityBehaviorPlayerPhysics) return original;
 
-        if (block.Code.Equals("scaffolding:scaffolding"))
+        if (block == null || accessor == null || pos == null) return original;
+
+        if (block.Code?.Equals("scaffolding:scaffolding") ?? false)
         {
             var merged = new List<Cuboidf>(original ?? new Cuboidf[0]);
             merged.AddRange(block.GetSelectionBoxes(accessor, pos));
