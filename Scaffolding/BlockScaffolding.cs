@@ -67,8 +67,9 @@ internal class BlockScaffolding : Block
         // check if is inside world borders
         if (!world.BlockAccessor.IsValidPos(current_pos)) return;
 
-        // check if block above scaffolding is air
-        if (world.BlockAccessor.GetBlockId(current_pos) != 0) return;
+        // check valid placement
+        string str = "";
+        if (!CanPlaceBlock(world, byPlayer, new BlockSelection(current_pos, BlockFacing.UP, this), ref str)) return;
 
         // place scaffolding and remove one from the players inventory
         world.BlockAccessor.SetBlock(Id, current_pos);
