@@ -8,12 +8,12 @@ namespace Scaffolding.Blocks;
 internal class EntityFallingScaffolding : EntityBlockFalling
 {
     int lastY;
+    bool fallen = false;
     BlockPos blockPos => new((int)Pos.X, (int)Pos.Y, (int)Pos.Z, Pos.Dimension);
 
     public EntityFallingScaffolding(Block block, BlockEntity entity, BlockPos pos) : base(block, entity, pos, null, 0, canFallSideways: false, 0)
     {
         lastY = pos.Y;
-
     }
 
     public override void Initialize(EntityProperties properties, ICoreAPI api, long InChunkIndex3d)
@@ -44,13 +44,14 @@ internal class EntityFallingScaffolding : EntityBlockFalling
     // disable normal placement behaviour
     public override void OnFallToGround(double motionY)
     {
+        if (fallen) return;
+        fallen = true;
         var block = World.BlockAccessor.GetBlock(blockPos);
         string str = "";
         if (Block.CanPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), ref str))
         {
             World.BlockAccessor.SetBlock(Block.Id, blockPos);
             Die(EnumDespawnReason.Removed);
-            return;
         }
         else
         {
