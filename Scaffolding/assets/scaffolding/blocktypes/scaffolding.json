@@ -24,6 +24,9 @@
 	"sideopaque": {
 		"all": false
 	},
+    "sidesolid": {
+        "all": false 
+    },
     "rainPermeable": true,
     "lightAbsorption": 0,
     "drops": [
