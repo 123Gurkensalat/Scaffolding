@@ -4,7 +4,6 @@ using Vintagestory.API.MathTools;
 using System;
 
 using Scaffolding.BlockEntities;
-using Vintagestory.API.Client;
 
 namespace Scaffolding.Blocks;
 
@@ -86,6 +85,7 @@ internal class BlockScaffolding : Block
         // otherwise, block will fall
         base.OnBlockPlaced(world, blockPos, byItemStack);
         GetBlockEntity(blockPos).OnBlockPlaced();
+        UpdateShape(world, blockPos);
     }
 
     public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)
@@ -100,7 +100,7 @@ internal class BlockScaffolding : Block
 
         if (neibpos.Y == pos.Y - 1 || neibpos.Y == pos.Y + 1)
         {
-            world.BlockAccessor.MarkBlockDirty(pos);
+            UpdateShape(world, pos);
         }
     }
 
@@ -119,20 +119,7 @@ internal class BlockScaffolding : Block
         }
     }
 
-    private BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)
-    {
-        return api.World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos);
-    }
-
-    public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
-    {
-        if (GetBlockEntity(pos)?.OnDestroy(byPlayer) ?? true)
-        {
-            base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
-        }
-    }
-
-    public override void OnDecalTesselation(IWorldAccessor world, MeshData decalMesh, BlockPos pos)
+    private void UpdateShape(IWorldAccessor world, BlockPos pos)
     {
         bool hasTop = world.BlockAccessor.GetBlockId(pos.UpCopy()) != 0;
         bool hasBot = world.BlockAccessor.GetBlockId(pos.DownCopy()) != 0;
@@ -161,7 +148,18 @@ internal class BlockScaffolding : Block
             Block newBlock = world.GetBlock(newCode);
             world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
         }
+    }
 
-        base.OnDecalTesselation(world, decalMesh, pos);
+    private BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)
+    {
+        return api.World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos);
+    }
+
+    public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
+    {
+        if (GetBlockEntity(pos)?.OnDestroy(byPlayer) ?? true)
+        {
+            base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
+        }
     }
 }

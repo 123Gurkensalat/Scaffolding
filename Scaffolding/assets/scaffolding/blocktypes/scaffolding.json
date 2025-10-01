@@ -6,12 +6,11 @@
         { "code": "type", "states": ["plain", "top_bot", "top", "bot"]}
     ],
     "creativeinventorybytype": {
-        "scaffolding-plain": { "general": ["*"] },
-        "*": {}
+        "scaffolding-*": { "general": ["*"] }
     },
     "shape": { "base": "block/scaffolding/{type}" },
     "textures": {
-        "generic": { "base":"game:block/wood/planks/generic"},
+        "wood-generic": { "base":"game:block/wood/planks/generic"},
         "rope": {"base":"game:block/locustnest/stalagmite/rope"}
     },
     "blockmaterial": "Wood",
@@ -32,6 +31,6 @@
     "rainPermeable": true,
     "lightAbsorption": 0,
     "drops": [
-		{ "type": "block", "code": "scaffolding", "quantity": { "avg": 1 }  }
+		{ "type": "block", "code": "scaffolding-plain", "quantity": { "avg": 1 }  }
 	]
 }
