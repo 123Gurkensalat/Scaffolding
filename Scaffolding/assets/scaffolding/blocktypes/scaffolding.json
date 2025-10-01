@@ -8,7 +8,7 @@
     "creativeinventorybytype": {
         "scaffolding-*": { "general": ["*"] }
     },
-    "shape": { "base": "block/scaffolding/{type}" },
+    "shape": { "base": "block/scaffolding_backup/{type}" },
     "textures": {
         "wood-generic": { "base":"game:block/wood/planks/generic"},
         "rope": {"base":"game:block/locustnest/stalagmite/rope"}
