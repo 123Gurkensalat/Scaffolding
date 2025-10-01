@@ -2,12 +2,14 @@
     "code": "scaffolding",
     "class": "scaffolding:scaffolding",
     "entityClass": "scaffolding:scaffolding",
-    "creativeinventory": {
-        "general": ["*"]
+    "variantgroups": [
+        { "code": "type", "states": ["plain", "top_bot", "top", "bot"]}
+    ],
+    "creativeinventorybytype": {
+        "scaffolding-plain": { "general": ["*"] },
+        "*": {}
     },
-    "shape": {
-        "base": "item/scaffolding"
-    },
+    "shape": { "base": "block/scaffolding/{type}" },
     "textures": {
         "generic": { "base":"game:block/wood/planks/generic"},
         "rope": {"base":"game:block/locustnest/stalagmite/rope"}

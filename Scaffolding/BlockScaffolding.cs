@@ -4,6 +4,7 @@ using Vintagestory.API.MathTools;
 using System;
 
 using Scaffolding.BlockEntities;
+using Vintagestory.API.Client;
 
 namespace Scaffolding.Blocks;
 
@@ -91,11 +92,20 @@ internal class BlockScaffolding : Block
     {
         base.OnNeighbourBlockChange(world, pos, neibpos);
 
-        // only interested in blocks below
-        if (neibpos.Y != pos.Y - 1) return;
         // if block below is scaffolding, it means the case is already handled
-        if (world.BlockAccessor.GetBlockId(neibpos) == Id) return;
+        if (neibpos.Y == pos.Y - 1 && world.BlockAccessor.GetBlockId(neibpos) != Id)
+        {
+            UpdateStability(pos);
+        }
 
+        if (neibpos.Y == pos.Y - 1 || neibpos.Y == pos.Y + 1)
+        {
+            world.BlockAccessor.MarkBlockDirty(pos);
+        }
+    }
+
+    private void UpdateStability(BlockPos pos)
+    {
         var entity = GetBlockEntity(pos);
         if (entity == null) return;
 
@@ -120,5 +130,38 @@ internal class BlockScaffolding : Block
         {
             base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
         }
+    }
+
+    public override void OnDecalTesselation(IWorldAccessor world, MeshData decalMesh, BlockPos pos)
+    {
+        bool hasTop = world.BlockAccessor.GetBlockId(pos.UpCopy()) != 0;
+        bool hasBot = world.BlockAccessor.GetBlockId(pos.DownCopy()) != 0;
+
+        if (hasTop && hasBot)
+        {
+            AssetLocation newCode = CodeWithVariant("shape", "top_bot");
+            Block newBlock = world.GetBlock(newCode);
+            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
+        else if (hasTop)
+        {
+            AssetLocation newCode = CodeWithVariant("shape", "top");
+            Block newBlock = world.GetBlock(newCode);
+            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
+        else if (hasBot)
+        {
+            AssetLocation newCode = CodeWithVariant("shape", "bot");
+            Block newBlock = world.GetBlock(newCode);
+            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
+        else
+        {
+            AssetLocation newCode = CodeWithVariant("shape", "plain");
+            Block newBlock = world.GetBlock(newCode);
+            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
+
+        base.OnDecalTesselation(world, decalMesh, pos);
     }
 }
