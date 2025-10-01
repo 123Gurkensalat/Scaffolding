@@ -1,6 +1,8 @@
 using Vintagestory.GameContent;
 using Vintagestory.API.Common;
+using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Datastructures;
 
 using HarmonyLib;
 
@@ -15,7 +17,8 @@ public static class PlayerPatches
     public static ICoreAPI Api;
     public static void ApplyAll(Harmony harmony)
     {
-        Apply(harmony, typeof(EntityBehaviorControlledPhysics), "ApplyTests", transpiler: nameof(Transpiler));
+        Apply(harmony, typeof(EntityBehaviorControlledPhysics), "ApplyTests", transpiler: nameof(ClimbingTranspiler));
+        Apply(harmony, typeof(CollisionTester), "ApplyTerrainCollision", transpiler: nameof(WalkingTranspiler));
     }
 
     private static void Apply(Harmony harmony, System.Type target, string function, string prefix = null, string postfix = null, string transpiler = null)
@@ -32,7 +35,38 @@ public static class PlayerPatches
             transpiler: h_transpiler != null ? new HarmonyMethod(h_transpiler) : null);
     }
 
-    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    private static bool IsLdloc(CodeInstruction instr)
+    {
+        return instr.opcode == OpCodes.Ldloc || instr.opcode == OpCodes.Ldloc_S ||
+               instr.opcode == OpCodes.Ldloc_0 || instr.opcode == OpCodes.Ldloc_1 ||
+               instr.opcode == OpCodes.Ldloc_2 || instr.opcode == OpCodes.Ldloc_3;
+    }
+
+    // Helper to convert ldloc opcode to index
+    private static int GetLdlocIndex(CodeInstruction instr)
+    {
+        if (instr.opcode == OpCodes.Ldloc_0) return 0;
+        if (instr.opcode == OpCodes.Ldloc_1) return 1;
+        if (instr.opcode == OpCodes.Ldloc_2) return 2;
+        if (instr.opcode == OpCodes.Ldloc_3) return 3;
+        if (instr.opcode == OpCodes.Ldloc || instr.opcode == OpCodes.Ldloc_S)
+        {
+            if (instr.operand == null)
+                throw new System.InvalidOperationException("ldloc or ldloc.s has null operand!");
+            if (instr.operand is LocalBuilder lb)
+                return lb.LocalIndex;
+
+            // Sometimes the operand might be an int (rare), handle that too
+            if (instr.operand is int i)
+                return i;
+
+            throw new System.InvalidOperationException($"Unsupported ldloc operand type: {instr.operand.GetType()}");
+        }
+
+        throw new System.InvalidOperationException("Unexpected ldloc opcode");
+    }
+
+    private static IEnumerable<CodeInstruction> ClimbingTranspiler(IEnumerable<CodeInstruction> instructions)
     {
         var codes = new List<CodeInstruction>(instructions);
         var getCollisionBoxes = AccessTools.Method(typeof(Block), nameof(Block.GetCollisionBoxes),
@@ -76,37 +110,6 @@ public static class PlayerPatches
         }
     }
 
-    private static bool IsLdloc(CodeInstruction instr)
-    {
-        return instr.opcode == OpCodes.Ldloc || instr.opcode == OpCodes.Ldloc_S ||
-               instr.opcode == OpCodes.Ldloc_0 || instr.opcode == OpCodes.Ldloc_1 ||
-               instr.opcode == OpCodes.Ldloc_2 || instr.opcode == OpCodes.Ldloc_3;
-    }
-
-    // Helper to convert ldloc opcode to index
-    private static int GetLdlocIndex(CodeInstruction instr)
-    {
-        if (instr.opcode == OpCodes.Ldloc_0) return 0;
-        if (instr.opcode == OpCodes.Ldloc_1) return 1;
-        if (instr.opcode == OpCodes.Ldloc_2) return 2;
-        if (instr.opcode == OpCodes.Ldloc_3) return 3;
-        if (instr.opcode == OpCodes.Ldloc || instr.opcode == OpCodes.Ldloc_S)
-        {
-            if (instr.operand == null)
-                throw new System.InvalidOperationException("ldloc or ldloc.s has null operand!");
-            if (instr.operand is LocalBuilder lb)
-                return lb.LocalIndex;
-
-            // Sometimes the operand might be an int (rare), handle that too
-            if (instr.operand is int i)
-                return i;
-
-            throw new System.InvalidOperationException($"Unsupported ldloc operand type: {instr.operand.GetType()}");
-        }
-
-        throw new System.InvalidOperationException("Unexpected ldloc opcode");
-    }
-
     /// <summary>
     /// Receives the original collision boxes and the block instance
     /// </summary>
@@ -125,4 +128,50 @@ public static class PlayerPatches
 
         return original;
     }
+
+    private static IEnumerable<CodeInstruction> WalkingTranspiler(IEnumerable<CodeInstruction> instructions)
+    {
+        var codes = new List<CodeInstruction>(instructions);
+        var generateCollisionBoxList = AccessTools.Method(typeof(CollisionTester), "GenerateCollisionBoxList");
+        var injectMethod = AccessTools.Method(typeof(PlayerPatches), nameof(InjectCustomTerrainCollisionBoxes));
+
+        for (int i = 0; i < codes.Count; i++)
+        {
+            var code = codes[i];
+            yield return code;
+
+            // Look for the first callvirt to GetCollisionBoxes
+            if (code.opcode == OpCodes.Callvirt && code.operand is MethodInfo mi && mi == generateCollisionBoxList)
+            {
+                yield return new CodeInstruction(OpCodes.Ldloc_0); // WorldAccessor
+                yield return new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(IWorldAccessor), "get_BlockAccessor")); // blockAccessor
+                yield return new CodeInstruction(OpCodes.Ldarg_0); // CollisionTester
+                yield return new CodeInstruction(OpCodes.Ldarg_1); // entity
+
+                yield return new CodeInstruction(OpCodes.Call, injectMethod);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Receives the original collision boxes and the block instance
+    /// </summary>
+    public static void InjectCustomTerrainCollisionBoxes(IBlockAccessor blockAccessor, CollisionTester tester, Entity entity)
+    {
+        if (tester.CollisionBoxList.Count == 0) return;
+        if (entity is not EntityPlayer ec) return;
+        if (ec.Controls.IsClimbing) return;
+        if (ec.Controls.Sneak) return;
+        //if (ec.Pos.Motion.Y > 2) return;
+
+        blockAccessor.WalkBlocks(tester.minPos, tester.maxPos, (block, x, y, z) =>
+        {
+            if (block?.Code.Equals("scaffolding:scaffolding") == true)
+            {
+                Api.Logger.Chat("hit");
+                tester.CollisionBoxList.Add(block.SelectionBoxes, x, y, z, block);
+            }
+        }, true);
+    }
+
 }
