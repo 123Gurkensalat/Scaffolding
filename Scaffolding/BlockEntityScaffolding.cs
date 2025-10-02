@@ -27,6 +27,7 @@ internal class BlockEntityScaffolding : BlockEntity
         {
             var fallingEntity = new EntityFallingScaffolding(Block, this, Pos);
             World.SpawnEntity(fallingEntity);
+            World.BlockAccessor.SetBlock(0, Pos);
             return;
         }
         Stability = maxStability;

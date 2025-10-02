@@ -16,7 +16,7 @@ internal class BlockScaffolding : Block
         if (shiftPressed) return false;
 
         // if not holding scaffolding -> normal behaviour
-        if (byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack?.Id != Id) return false;
+        if (!byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack?.Block.WildCardMatch("scaffolding-*") ?? true) return false;
 
         // when rmb on top-side of scaffolding -> add scaffolding to player look direction
         bool isTopSide = blockSel.Face == BlockFacing.UP;
@@ -62,7 +62,7 @@ internal class BlockScaffolding : Block
         do
         {
             current_pos.Add(direction);
-        } while (world.BlockAccessor.GetBlockId(current_pos) == Id);
+        } while (GetBlockEntity(current_pos) != null);
 
         // check if is inside world borders
         if (!world.BlockAccessor.IsValidPos(current_pos)) return;
@@ -73,6 +73,7 @@ internal class BlockScaffolding : Block
 
         // place scaffolding and remove one from the players inventory
         world.BlockAccessor.SetBlock(Id, current_pos);
+        world.BlockAccessor.TriggerNeighbourBlockUpdate(current_pos);
         if (byPlayer != null && byPlayer.WorldData.CurrentGameMode != EnumGameMode.Creative)
         {
             byPlayer.InventoryManager.ActiveHotbarSlot.TakeOut(1);
@@ -84,23 +85,25 @@ internal class BlockScaffolding : Block
         // if positiv stability, attach to another scaffolding
         // otherwise, block will fall
         base.OnBlockPlaced(world, blockPos, byItemStack);
-        GetBlockEntity(blockPos).OnBlockPlaced();
         UpdateShape(world, blockPos);
+        GetBlockEntity(blockPos).OnBlockPlaced();
     }
 
     public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)
     {
+        api.Logger.Chat("neighbour changed");
         base.OnNeighbourBlockChange(world, pos, neibpos);
 
         // if block below is scaffolding, it means the case is already handled
-        if (neibpos.Y == pos.Y - 1 && world.BlockAccessor.GetBlockId(neibpos) != Id)
+        if (neibpos.Y == pos.Y - 1 && GetBlockEntity(neibpos) != null)
         {
             UpdateStability(pos);
         }
 
+        UpdateShape(world, pos);
+
         if (neibpos.Y == pos.Y - 1 || neibpos.Y == pos.Y + 1)
         {
-            UpdateShape(world, pos);
         }
     }
 
@@ -124,27 +127,29 @@ internal class BlockScaffolding : Block
         bool hasTop = world.BlockAccessor.GetBlockId(pos.UpCopy()) != 0;
         bool hasBot = world.BlockAccessor.GetBlockId(pos.DownCopy()) != 0;
 
+        api.Logger.Chat("update shape");
+
         if (hasTop && hasBot)
         {
-            AssetLocation newCode = CodeWithVariant("shape", "top_bot");
+            AssetLocation newCode = new AssetLocation("scaffolding:scaffolding-plain");
             Block newBlock = world.GetBlock(newCode);
             world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
         }
         else if (hasTop)
         {
-            AssetLocation newCode = CodeWithVariant("shape", "top");
+            AssetLocation newCode = new AssetLocation("scaffolding:scaffolding-bot");
             Block newBlock = world.GetBlock(newCode);
             world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
         }
         else if (hasBot)
         {
-            AssetLocation newCode = CodeWithVariant("shape", "bot");
+            AssetLocation newCode = new AssetLocation("scaffolding:scaffolding-top");
             Block newBlock = world.GetBlock(newCode);
             world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
         }
         else
         {
-            AssetLocation newCode = CodeWithVariant("shape", "plain");
+            AssetLocation newCode = new AssetLocation("scaffolding:scaffolding-top_bot");
             Block newBlock = world.GetBlock(newCode);
             world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
         }

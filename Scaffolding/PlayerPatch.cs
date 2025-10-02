@@ -118,7 +118,7 @@ public static class PlayerPatches
 
         if (block == null || accessor == null || pos == null) return original;
 
-        if (block.Code?.Equals("scaffolding:scaffolding") ?? false)
+        if (block.WildCardMatch("scaffolding-*"))
         {
             var merged = new List<Cuboidf>(original ?? new Cuboidf[0]);
             merged.AddRange(block.GetSelectionBoxes(accessor, pos));
@@ -157,20 +157,30 @@ public static class PlayerPatches
     /// </summary>
     public static void InjectCustomTerrainCollisionBoxes(IBlockAccessor blockAccessor, CollisionTester tester, Entity entity)
     {
-        if (tester.CollisionBoxList.Count == 0) return;
-        if (entity is not EntityPlayer ec) return;
-        if (ec.Controls.IsClimbing) return;
-        if (ec.Controls.Sneak) return;
-        //if (ec.Pos.Motion.Y > 2) return;
-
-        blockAccessor.WalkBlocks(tester.minPos, tester.maxPos, (block, x, y, z) =>
+        if (tester.CollisionBoxList.Count != 0) return;
+        if (entity is EntityPlayer ec)
         {
-            if (block?.Code.Equals("scaffolding:scaffolding") == true)
-            {
-                Api.Logger.Chat("hit");
-                tester.CollisionBoxList.Add(block.SelectionBoxes, x, y, z, block);
-            }
-        }, true);
+            if (ec.Controls.IsClimbing) return;
+            if (ec.Controls.Sneak) return;
+
+            blockAccessor.WalkBlocks(tester.minPos, tester.maxPos, (block, x, y, z) =>
+                {
+                    if (block?.WildCardMatch("scaffolding-*") == true)
+                    {
+                        tester.CollisionBoxList.Add(block.SelectionBoxes, x, y, z, block);
+                    }
+                }, true);
+        }
+        else if (entity is EntityItem)
+        {
+            blockAccessor.WalkBlocks(tester.minPos, tester.maxPos, (block, x, y, z) =>
+                {
+                    if (block?.WildCardMatch("scaffolding-*") == true)
+                    {
+                        tester.CollisionBoxList.Add(block.SelectionBoxes, x, y, z, block);
+                    }
+                }, true);
+        }
     }
 
 }

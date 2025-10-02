@@ -3,6 +3,8 @@ using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Common.Entities;
 
+using Scaffolding.BlockEntities;
+
 namespace Scaffolding.Blocks;
 
 internal class EntityFallingScaffolding : EntityBlockFalling
@@ -33,10 +35,10 @@ internal class EntityFallingScaffolding : EntityBlockFalling
 
     private void OnBlockPosChanged()
     {
-        var block = World.BlockAccessor.GetBlock(blockPos);
-        if (block?.Id == this.Block.Id)
+        if (World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos) != null)
         {
             World.BlockAccessor.SetBlock(Block.Id, blockPos.Up());
+            World.BlockAccessor.TriggerNeighbourBlockUpdate(blockPos.Up());
             Die(EnumDespawnReason.Removed);
         }
     }
@@ -51,6 +53,7 @@ internal class EntityFallingScaffolding : EntityBlockFalling
         if (Block.CanPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), ref str))
         {
             World.BlockAccessor.SetBlock(Block.Id, blockPos);
+            World.BlockAccessor.TriggerNeighbourBlockUpdate(blockPos);
             Die(EnumDespawnReason.Removed);
         }
         else

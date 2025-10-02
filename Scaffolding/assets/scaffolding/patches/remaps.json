@@ -1,0 +1,10 @@
+[
+    {
+        "op": "add",
+        "file": "game:config/remaps.json",
+        "path": "/scaffolding:v1.2.0",
+        "value": [
+            "/iir remapq scaffolding:scaffolding-plain scaffolding:scaffolding force"
+        ]
+    }
+]
