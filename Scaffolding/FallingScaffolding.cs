@@ -13,7 +13,8 @@ internal class EntityFallingScaffolding : EntityBlockFalling
     bool fallen = false;
     BlockPos blockPos => new((int)Pos.X, (int)Pos.Y, (int)Pos.Z, Pos.Dimension);
 
-    public EntityFallingScaffolding(Block block, BlockEntity entity, BlockPos pos) : base(block, entity, pos, null, 0, canFallSideways: false, 0)
+    public EntityFallingScaffolding(Block block, BlockEntity entity, BlockPos pos)
+        : base(block, entity, pos, null, 0, canFallSideways: false, 0)
     {
         lastY = pos.Y;
     }
@@ -37,8 +38,7 @@ internal class EntityFallingScaffolding : EntityBlockFalling
     {
         if (World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos) != null)
         {
-            World.BlockAccessor.SetBlock(Block.Id, blockPos.Up());
-            World.BlockAccessor.TriggerNeighbourBlockUpdate(blockPos.Up());
+            Block.DoPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), null);
             Die(EnumDespawnReason.Removed);
         }
     }
@@ -52,8 +52,7 @@ internal class EntityFallingScaffolding : EntityBlockFalling
         string str = "";
         if (Block.CanPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), ref str))
         {
-            World.BlockAccessor.SetBlock(Block.Id, blockPos);
-            World.BlockAccessor.TriggerNeighbourBlockUpdate(blockPos);
+            Block.DoPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), null);
             Die(EnumDespawnReason.Removed);
         }
         else
