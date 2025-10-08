@@ -38,21 +38,26 @@ internal class EntityFallingScaffolding : EntityBlockFalling
     {
         if (World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos) != null)
         {
-            Block.DoPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), null);
-            Die(EnumDespawnReason.Removed);
+            TryPlaceBlock(blockPos.Up());
         }
     }
 
     // disable normal placement behaviour
     public override void OnFallToGround(double motionY)
     {
+        TryPlaceBlock(blockPos);
+    }
+
+    private void TryPlaceBlock(BlockPos pos)
+    {
         if (fallen) return;
         fallen = true;
-        var block = World.BlockAccessor.GetBlock(blockPos);
+
         string str = "";
-        if (Block.CanPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), ref str))
+        ItemStack itemStack = new(Block, 1);
+        BlockSelection blockSelection = new(pos, BlockFacing.UP, Block);
+        if (Block.TryPlaceBlock(World, null, itemStack, blockSelection, ref str))
         {
-            Block.DoPlaceBlock(World, null, new BlockSelection(blockPos, BlockFacing.UP, Block), null);
             Die(EnumDespawnReason.Removed);
         }
         else
@@ -63,6 +68,6 @@ internal class EntityFallingScaffolding : EntityBlockFalling
 
     public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer)
     {
-        return new ItemStack[] { new ItemStack(Block, 1) };
+        return new ItemStack[] { new ItemStack(world.GetBlock(Block.CodeWithParts("plain", "ns")), 1) };
     }
 }

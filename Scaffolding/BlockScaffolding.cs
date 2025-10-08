@@ -1,6 +1,7 @@
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 
+using System.Collections.Generic;
 using System;
 
 using Scaffolding.BlockEntities;
@@ -9,39 +10,64 @@ namespace Scaffolding.Blocks;
 
 internal class BlockScaffolding : Block
 {
+    private static int? _maxStability = null;
+    public static int MaxStability
+    {
+        get
+        {
+            _maxStability ??= 6;
+            return _maxStability ?? 6;
+        }
+        set { _maxStability ??= value; }
+    }
+
     public override bool TryPlaceBlock(IWorldAccessor world, IPlayer byPlayer, ItemStack itemstack, BlockSelection blockSel, ref string failureCode)
     {
-        float yaw = byPlayer.Entity.Pos.Yaw * GameMath.RAD2DEG;
-        int i = GameMath.Mod((int)Math.Round(yaw / 90f), 4);
-        string orientation = i switch
+        var (_, maxStabilityPos) = GetMaxStability(blockSel.Position);
+        var block = api.World.GetBlock(GetCode(blockSel.Position, maxStabilityPos, byPlayer));
+        if (block.CanPlaceBlock(world, byPlayer, blockSel, ref failureCode))
         {
-            0 => "ns",
-            1 => "we",
-            2 => "ns",
-            3 => "we",
-            _ => ""
-        };
-
-        Block orientedBlock = world.GetBlock(CodeWithParts(orientation));
-        if (orientedBlock.CanPlaceBlock(world, byPlayer, blockSel, ref failureCode))
-        {
-            orientedBlock.DoPlaceBlock(world, byPlayer, blockSel, itemstack);
+            block.DoPlaceBlock(world, byPlayer, blockSel, itemstack);
+            world.BlockAccessor.TriggerNeighbourBlockUpdate(blockSel.Position);
             return true;
         }
         return false;
     }
+
+    public override void OnBlockPlaced(IWorldAccessor world, BlockPos pos, ItemStack byItemStack = null)
+    {
+        base.OnBlockPlaced(world, pos, byItemStack);
+
+        // if positiv stability, attach to another scaffolding
+        // otherwise, block will fall
+        var (maxStability, maxStabilityPos) = GetMaxStability(pos);
+        var entity = GetBlockEntity(pos);
+        if (maxStability < 1)
+        {
+            var fallingEntity = new EntityFallingScaffolding(this, entity, pos);
+            api.World.SpawnEntity(fallingEntity);
+            return;
+        }
+
+        entity.Stability = maxStability;
+        // block is root when it has max stability and is placed on solid ground
+        bool isRoot = maxStability == MaxStability && GetBlockEntity(pos.DownCopy()) == null;
+        entity.Root = isRoot ? pos : GetBlockEntity(maxStabilityPos).Root;
+
+        // Updates surrounding stability and root
+        PropogateStability(entity, true);
+    }
+
     public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
     {
         // when shift + rmb scaffolding -> normal block behaviour
-        bool shiftPressed = byPlayer.Entity.Controls.ShiftKey;
-        if (shiftPressed) return false;
+        if (byPlayer.Entity.Controls.ShiftKey) return false;
 
         // if not holding scaffolding -> normal behaviour
-        if (!byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack?.Block.WildCardMatch("scaffolding-*") ?? true) return false;
+        if (!byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack?.Block?.WildCardMatch("scaffolding-*-*") ?? true) return false;
 
         // when rmb on top-side of scaffolding -> add scaffolding to player look direction
-        bool isTopSide = blockSel.Face == BlockFacing.UP;
-        if (isTopSide)
+        if (blockSel.Face == BlockFacing.UP)
         {
             TryAddScaffoldingToSide(world, byPlayer, blockSel);
             return true;
@@ -56,15 +82,7 @@ internal class BlockScaffolding : Block
     private void TryAddScaffolding(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
     {
         Vec3i up = new Vec3i(0, 1, 0);
-
-        string orientation = (int)blockSel.Face.Axis switch
-        {
-            0 => "we",
-            2 => "ns",
-            _ => ""
-        };
-
-        TryAddScaffoldingToDirection(world, byPlayer, blockSel, up, orientation);
+        TryAddScaffoldingToDirection(world, byPlayer, blockSel, up);
     }
 
     private void TryAddScaffoldingToSide(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
@@ -81,67 +99,33 @@ internal class BlockScaffolding : Block
             _ => new Vec3i(0, 0, 0)
         };
 
-        string orientation = i switch
-        {
-            0 => "ns",
-            1 => "we",
-            2 => "ns",
-            3 => "we",
-            _ => ""
-        };
-
-        TryAddScaffoldingToDirection(world, byPlayer, blockSel, dir, orientation);
+        TryAddScaffoldingToDirection(world, byPlayer, blockSel, dir);
     }
 
-    private void TryAddScaffoldingToDirection(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, Vec3i direction, string orientation)
+    private void TryAddScaffoldingToDirection(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, Vec3i direction)
     {
         // walk in direction until there is no more scaffolding
         BlockPos current_pos = blockSel.Position.Copy();
         do
         {
             current_pos.Add(direction);
-        } while (Scaffolding.GetBlockEntity(current_pos) != null);
-
-        // check valid placement
-        string str = "";
-        if (!CanPlaceBlock(world, byPlayer, blockSel, ref str)) return;
+        } while (GetBlockEntity(current_pos) != null);
 
         // place scaffolding and remove one from the players inventory
-        string _ = "";
-        TryPlaceBlock(world, byPlayer, byPlayer.InventoryManager.ActiveHotbarSlot, blockSel, ref _);
-    }
-
-    public override void OnBlockPlaced(IWorldAccessor world, BlockPos pos, ItemStack byItemStack = null)
-    {
-        base.OnBlockPlaced(world, pos, byItemStack);
-
-        // if positiv stability, attach to another scaffolding
-        // otherwise, block will fall
-        var entity = Scaffolding.GetBlockEntity(pos);
-        var (maxStability, maxStabilityPos) = Scaffolding.GetMaxStability(pos);
-        if (maxStability < 1)
-        {
-            var fallingEntity = new EntityFallingScaffolding(this, entity, pos);
-            api.World.SpawnEntity(fallingEntity);
-            return;
-        }
-        entity.Stability = maxStability;
-
-        // block is root when it has max stability and is placed on solid ground
-        bool isRoot = maxStability == Scaffolding.MaxStability && Scaffolding.GetBlockEntity(pos.DownCopy()) == null;
-        entity.Root = isRoot ? pos : Scaffolding.GetBlockEntity(maxStabilityPos).Root;
-
-        // Updates surrounding stability and root
-        Scaffolding.PropogateStability(entity);
+        string failureCode = "";
+        BlockSelection newBlockSelection = new(current_pos, BlockFacing.UP, this);
+        TryPlaceBlock(world, byPlayer, byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack, newBlockSelection, ref failureCode);
     }
 
     public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)
     {
         base.OnNeighbourBlockChange(world, pos, neibpos);
-
-        UpdateShape(world, pos);
+        if (neibpos.Y == pos.Y + 1 || neibpos.Y == pos.Y - 1)
+        {
+            UpdateType(pos);
+        }
         // if block below is scaffolding, it means the case is already handled
-        if (neibpos.Y == pos.Y - 1 && Scaffolding.GetBlockEntity(neibpos) == null)
+        if (neibpos.Y == pos.Y - 1 && GetBlockEntity(neibpos) == null)
         {
             UpdateStability(pos);
         }
@@ -149,29 +133,28 @@ internal class BlockScaffolding : Block
 
     private void UpdateStability(BlockPos pos)
     {
-        var entity = Scaffolding.GetBlockEntity(pos);
-
+        var entity = GetBlockEntity(pos);
         if (entity.IsRoot)
         {
             OnBlockBelowDestroyed(pos, entity);
         }
         else
         {
-            var (maxStability, maxStabilityPos) = Scaffolding.GetMaxStability(pos);
+            var (maxStability, maxStabilityPos) = GetMaxStability(pos);
             entity.Stability = maxStability;
 
             // block is root when it has max stability and is placed on solid ground
-            bool isRoot = maxStability == Scaffolding.MaxStability && Scaffolding.GetBlockEntity(pos.DownCopy()) == null;
-            entity.Root = isRoot ? pos : Scaffolding.GetBlockEntity(maxStabilityPos).Root;
+            bool isRoot = maxStability == MaxStability && GetBlockEntity(pos.DownCopy()) == null;
+            entity.Root = isRoot ? pos : GetBlockEntity(maxStabilityPos).Root;
 
             // Updates surrounding stability and root
-            Scaffolding.PropogateStability(entity);
+            PropogateStability(entity, true);
         }
     }
 
     private void OnBlockBelowDestroyed(BlockPos pos, BlockEntityScaffolding entity)
     {
-        var reachable = Scaffolding.GetReachable(pos, out var neighbours);
+        var reachable = GetReachable(pos, out var neighbours);
 
         foreach (var node in reachable)
         {
@@ -179,9 +162,12 @@ internal class BlockScaffolding : Block
             node.Root = null;
         }
 
+        entity.Stability = 0;
+        entity.Root = null;
+
         foreach (var node in neighbours)
         {
-            Scaffolding.PropogateStability(node);
+            PropogateStability(node);
         }
 
         if (entity.Stability <= 0)
@@ -192,44 +178,30 @@ internal class BlockScaffolding : Block
         // check if they have a stable neighbour
         foreach (var node in reachable)
         {
-            if (node.Root == null || node.Stability < 1)
+            if (node.Root == null || node.Stability <= 0)
             {
                 api.World.BlockAccessor.BreakBlock(node.Pos, null);
             }
         }
-    }
 
-    public void UpdateShape(IWorldAccessor world, BlockPos pos)
-    {
-        bool hasTop = world.BlockAccessor.GetBlockId(pos.UpCopy()) != 0;
-        bool hasBot = world.BlockAccessor.GetBlockId(pos.DownCopy()) != 0;
-
-        if (hasTop && hasBot)
+        foreach (var node in reachable)
         {
-            Block newBlock = world.GetBlock(CodeWithPart("plain", 1));
-            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
-        }
-        else if (hasTop)
-        {
-            Block newBlock = world.GetBlock(CodeWithPart("bot", 1));
-            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
-        }
-        else if (hasBot)
-        {
-            Block newBlock = world.GetBlock(CodeWithPart("top", 1));
-            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
-        }
-        else
-        {
-            Block newBlock = world.GetBlock(CodeWithPart("top_bot", 1));
-            world.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+            if (node.Root != null && node.Stability > 0)
+            {
+                UpdateCode(pos);
+            }
         }
     }
 
     public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
     {
-        base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
-        var reachable = Scaffolding.GetReachable(pos, out var neighbours);
+        if (GetBlockEntity(pos).Stability <= 0)
+        {
+            base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
+            return;
+        }
+
+        var reachable = GetReachable(pos, out var neighbours);
 
         foreach (var node in reachable)
         {
@@ -239,7 +211,7 @@ internal class BlockScaffolding : Block
 
         foreach (var node in neighbours)
         {
-            Scaffolding.PropogateStability(node);
+            PropogateStability(node);
         }
 
         // check if they have a stable neighbour
@@ -250,32 +222,90 @@ internal class BlockScaffolding : Block
                 api.World.BlockAccessor.BreakBlock(node.Pos, byPlayer);
             }
         }
-    }
-    
-    private static ICoreAPI Api;
-    private static int? _maxStability = null;
-    public static int MaxStability {
-        get
+
+        foreach (var node in reachable)
         {
-            _maxStability ??= 4;
-            return _maxStability ?? 4;
+            if (node.Root != null && node.Stability > 0)
+                UpdateCode(node.Pos);
         }
-        set{ _maxStability ??= value; }
-    }
-    public static IWorldAccessor World => Api.World;
 
-    public static void Initialize(ICoreAPI api)
-    {
-        Api = api;
+        base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
     }
 
-    public static BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)
+    private string GetTypeCode(BlockPos pos)
     {
-        return World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos);
+        bool hasTop = api.World.BlockAccessor.GetBlockId(pos.UpCopy()) != 0;
+        bool hasBot = api.World.BlockAccessor.GetBlockId(pos.DownCopy()) != 0;
+
+        if (hasTop && hasBot) return "plain";
+        else if (hasTop) return "bot";
+        else if (hasBot) return "top";
+        else return "top_bot";
+    }
+
+    private string GetOrientationCode(BlockPos pos, BlockPos maxStabilityPos, IPlayer player)
+    {
+        if (maxStabilityPos == null) return GetOrientationCodeFromLookDir(player);
+
+        var dir = maxStabilityPos.SubCopy(pos);
+
+        if (dir.Y == -1) return GetOrientationCodeFromLookDir(player);
+        else if (dir.X == 1 || dir.X == -1) return "we";
+        else if (dir.Z == 1 || dir.Z == -1) return "ns";
+        else return "";
+    }
+
+    private string GetOrientationCodeFromLookDir(IPlayer player)
+    {
+        if (player == null) return LastCodePart();
+
+        float yaw = player.Entity.Pos.Yaw * GameMath.RAD2DEG;
+        int i = GameMath.Mod((int)Math.Round(yaw / 90f), 4);
+        return i switch
+        {
+            0 => "ns",
+            1 => "we",
+            2 => "ns",
+            3 => "we",
+            _ => ""
+        };
+    }
+
+    private AssetLocation GetCode(BlockPos pos, BlockPos maxStabilityPos, IPlayer player = null)
+    {
+        return CodeWithParts(GetTypeCode(pos), GetOrientationCode(pos, maxStabilityPos, player));
+    }
+
+    private void UpdateType(BlockPos pos)
+    {
+        var block = api.World.BlockAccessor.GetBlock(pos);
+        Block newBlock = api.World.GetBlock(block.CodeWithPart(GetTypeCode(pos), 1));
+        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+    }
+
+    private void UpdateOrientation(BlockPos pos, IPlayer player = null)
+    {
+        var (_, maxStabilityPos) = GetMaxStability(pos);
+        var block = api.World.BlockAccessor.GetBlock(pos);
+        Block newBlock = api.World.GetBlock(block.CodeWithParts(GetOrientationCode(pos, maxStabilityPos, player)));
+        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+    }
+
+    private void UpdateCode(BlockPos pos, IPlayer player = null)
+    {
+        var (_, maxStabilityPos) = GetMaxStability(pos);
+        var block = api.World.BlockAccessor.GetBlock(pos);
+        Block newBlock = api.World.GetBlock(block.CodeWithParts(GetTypeCode(pos), GetOrientationCode(pos, maxStabilityPos, player)));
+        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+    }
+
+    public BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)
+    {
+        return api.World.BlockAccessor.GetBlockEntity<BlockEntityScaffolding>(blockPos);
     }
 
     // Iterates over neighbours that have BlockEntityScaffolding
-    public static IEnumerable<BlockEntityScaffolding> Neighbours(BlockPos pos)
+    public IEnumerable<BlockEntityScaffolding> Neighbours(BlockPos pos)
     {
         BlockEntityScaffolding be;
         be = GetBlockEntity(pos.NorthCopy());
@@ -290,7 +320,7 @@ internal class BlockScaffolding : Block
 
     /// Searches for the most stable neighbour
     /// Calculates the resulting stability when attaching to it and returns it
-    public static (int max, BlockPos maxPos) GetMaxStability(BlockPos pos)
+    public (int max, BlockPos maxPos) GetMaxStability(BlockPos pos)
     {
         var currentEntity = GetBlockEntity(pos.DownCopy());
         int maxStability = int.MinValue;
@@ -300,7 +330,7 @@ internal class BlockScaffolding : Block
             maxStability = currentEntity.Stability;
             maxPos = currentEntity.Pos;
         }
-        else if (World.BlockAccessor.IsSideSolid(pos.X, pos.Y - 1, pos.Z, BlockFacing.UP))
+        else if (api.World.BlockAccessor.IsSideSolid(pos.X, pos.Y - 1, pos.Z, BlockFacing.UP))
         {
             return (MaxStability, pos.DownCopy());
         }
@@ -314,20 +344,26 @@ internal class BlockScaffolding : Block
             }
         }
 
-        return (maxStability, maxPos.Copy());
+        return (maxStability, maxPos?.Copy());
     }
 
     /// Checks all neighbours if they can increase their stability when attaching to this block
     /// And calls their PropogateStability()
-    public static void PropogateStability(BlockEntityScaffolding from)
+    public void PropogateStability(BlockEntityScaffolding from, bool updateOrientation = false)
     {
         from.MarkDirty();
+        if (updateOrientation)
+        {
+            var (_, maxPos) = GetMaxStability(from.Pos);
+            UpdateOrientation(from.Pos);
+        }
+
         var currentEntity = GetBlockEntity(from.Pos.UpCopy());
         if (currentEntity?.Stability < from.Stability)
         {
             currentEntity.Stability = from.Stability;
             currentEntity.Root = from.Root;
-            PropogateStability(currentEntity);
+            PropogateStability(currentEntity, updateOrientation);
         }
 
         foreach (var neighbour in Neighbours(from.Pos))
@@ -336,20 +372,20 @@ internal class BlockScaffolding : Block
             {
                 neighbour.Stability = from.Stability - 1;
                 neighbour.Root = from.Root;
-                PropogateStability(neighbour);
+                PropogateStability(neighbour, updateOrientation);
             }
         }
     }
 
     // yield returns all reachable notes that life in the sub-tree (same root and decreasing stability)
     // optionally returns nodes who are bordering this sub-tree (but inside another sub-tree)
-    public static List<BlockEntityScaffolding> GetReachable(BlockPos pos)
+    public List<BlockEntityScaffolding> GetReachable(BlockPos pos)
     {
         var neighbours = new List<BlockEntityScaffolding>();
         return GetReachable(pos, out neighbours);
     }
 
-    public static List<BlockEntityScaffolding> GetReachable(BlockPos pos, out List<BlockEntityScaffolding> neighbours)
+    public List<BlockEntityScaffolding> GetReachable(BlockPos pos, out List<BlockEntityScaffolding> neighbours)
     {
         var queue = new Queue<BlockPos>();
         var visited = new HashSet<BlockPos>();
@@ -366,7 +402,7 @@ internal class BlockScaffolding : Block
             {
                 queue.Enqueue(pos.UpCopy());
             }
-            foreach (var neighbour in Scaffolding.Neighbours(pos))
+            foreach (var neighbour in Neighbours(pos))
             {
                 queue.Enqueue(neighbour.Pos);
             }

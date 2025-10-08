@@ -9,6 +9,8 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Generic;
 
+using Scaffolding.Blocks;
+
 namespace Scaffolding.Patches;
 
 public static class PlayerPatches
@@ -118,7 +120,7 @@ public static class PlayerPatches
 
         if (block == null || accessor == null || pos == null) return original;
 
-        if (block.WildCardMatch("scaffolding-*"))
+        if (block.WildCardMatch("scaffolding-*-*"))
         {
             var merged = new List<Cuboidf>(original ?? new Cuboidf[0]);
             merged.AddRange(block.GetSelectionBoxes(accessor, pos));
@@ -165,7 +167,7 @@ public static class PlayerPatches
 
             blockAccessor.WalkBlocks(tester.minPos, tester.maxPos, (block, x, y, z) =>
                 {
-                    if (block?.WildCardMatch("scaffolding-*") == true)
+                    if (block?.WildCardMatch("scaffolding-*-*") == true)
                     {
                         tester.CollisionBoxList.Add(block.SelectionBoxes, x, y, z, block);
                     }
@@ -175,12 +177,11 @@ public static class PlayerPatches
         {
             blockAccessor.WalkBlocks(tester.minPos, tester.maxPos, (block, x, y, z) =>
                 {
-                    if (block?.WildCardMatch("scaffolding-*") == true)
+                    if (block?.WildCardMatch("scaffolding-*-*") == true)
                     {
                         tester.CollisionBoxList.Add(block.SelectionBoxes, x, y, z, block);
                     }
                 }, true);
         }
     }
-
 }
