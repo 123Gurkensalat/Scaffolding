@@ -3,15 +3,15 @@
     "class": "scaffolding:scaffolding",
     "entityClass": "scaffolding:scaffolding",
     "variantgroups": [
-        { "code": "type", "states": ["plain", "top_bot", "top", "bot"] },
+        { "code": "type", "states": ["plain", "tb", "top", "bot"] },
         { "code": "orientation", "states": ["ns", "we"] }
     ],
     "creativeinventorybytype": {
         "scaffolding-top-ns": { "general": ["*"] }
     },
     "shapebytype": {
-        "scaffolding-*-ns": { "base": "block/scaffolding/{type}", "rotatey": 0 },
-        "scaffolding-*-we": { "base": "block/scaffolding/{type}", "rotatey": 90 }
+        "*-ns": { "base": "block/scaffolding/{type}", "rotatey": 0 },
+        "*-we": { "base": "block/scaffolding/{type}", "rotatey": 90 }
     },
     "textures": {
         "wood-generic": { "base":"game:block/wood/planks/generic"},

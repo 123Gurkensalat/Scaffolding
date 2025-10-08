@@ -159,7 +159,6 @@ public static class PlayerPatches
     /// </summary>
     public static void InjectCustomTerrainCollisionBoxes(IBlockAccessor blockAccessor, CollisionTester tester, Entity entity)
     {
-        if (tester.CollisionBoxList.Count != 0) return;
         if (entity is EntityPlayer ec)
         {
             if (ec.Controls.IsClimbing) return;

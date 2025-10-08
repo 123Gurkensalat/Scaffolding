@@ -242,7 +242,7 @@ internal class BlockScaffolding : Block
         if (hasTop && hasBot) return "plain";
         else if (hasTop) return "bot";
         else if (hasBot) return "top";
-        else return "top_bot";
+        else return "tb";
     }
 
     private string GetOrientationCode(BlockPos pos, BlockPos maxStabilityPos, IPlayer player)
