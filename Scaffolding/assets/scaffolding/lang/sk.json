@@ -1,4 +1,4 @@
 {
     "game:tabname-scaffolding": "Scaffolding",
-    "block-scaffolding": "Lešenie"
+    "block-scaffolding-*-*": "Lešenie"
 }

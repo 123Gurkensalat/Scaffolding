@@ -1,4 +1,4 @@
 {
     "game:tabname-scaffolding": "Scaffolding",
-    "block-scaffolding": "Будівельні ліси"
+    "block-scaffolding-*-*": "Будівельні ліси"
 }

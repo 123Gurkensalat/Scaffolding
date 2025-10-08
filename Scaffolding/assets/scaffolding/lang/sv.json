@@ -1,4 +1,4 @@
 {
     "game:tabname-scaffolding": "Scaffolding",
-    "block-scaffolding": "Byggnadsställningar"
+    "block-scaffolding-*-*": "Byggnadsställningar"
 }
