@@ -1,5 +1,6 @@
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Server;
 
 using System.Collections.Generic;
 using System;
@@ -114,7 +115,8 @@ internal class BlockScaffolding : Block
         // place scaffolding and remove one from the players inventory
         string failureCode = "";
         BlockSelection newBlockSelection = new(current_pos, BlockFacing.UP, this);
-        TryPlaceBlock(world, byPlayer, byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack, newBlockSelection, ref failureCode);
+        var itemstack = byPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative ? byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack : byPlayer.InventoryManager.ActiveHotbarSlot?.TakeOut(1);
+        TryPlaceBlock(world, byPlayer, itemstack, newBlockSelection, ref failureCode);
     }
 
     public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)

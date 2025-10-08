@@ -2,20 +2,16 @@
     "code": "scaffolding",
     "class": "scaffolding:scaffolding",
     "entityClass": "scaffolding:scaffolding",
-    "behaviors": [
-		{ "name": "WrenchOrientable", "properties": { "baseCode": "scaffolding-{type}"  } }
-    ],
     "variantgroups": [
         { "code": "type", "states": ["plain", "top_bot", "top", "bot"] },
         { "code": "orientation", "states": ["ns", "we"] }
     ],
     "creativeinventorybytype": {
-        "scaffolding-plain-ns": { "general": ["*"] },
-        "scaffolding-*-*": { "general": ["*"] }
+        "scaffolding-plain-ns": { "general": ["*"] }
     },
     "shapebytype": {
-        "scaffolding-*-ns": { "base": "block/scaffolding_backup/{type}", "rotatey": 0 },
-        "scaffolding-*-we": { "base": "block/scaffolding_backup/{type}", "rotatey": 90 }
+        "scaffolding-*-ns": { "base": "block/scaffolding/{type}", "rotatey": 0 },
+        "scaffolding-*-we": { "base": "block/scaffolding/{type}", "rotatey": 90 }
     },
     "textures": {
         "wood-generic": { "base":"game:block/wood/planks/generic"},
