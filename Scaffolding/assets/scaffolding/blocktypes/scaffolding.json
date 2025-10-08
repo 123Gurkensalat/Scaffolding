@@ -7,7 +7,7 @@
         { "code": "orientation", "states": ["ns", "we"] }
     ],
     "creativeinventorybytype": {
-        "scaffolding-plain-ns": { "general": ["*"] }
+        "scaffolding-top-ns": { "general": ["*"] }
     },
     "shapebytype": {
         "scaffolding-*-ns": { "base": "block/scaffolding/{type}", "rotatey": 0 },
@@ -35,6 +35,23 @@
     "rainPermeable": true,
     "lightAbsorption": 0,
     "drops": [
-		{ "type": "block", "code": "scaffolding-plain-ns", "quantity": { "avg": 1 }  }
-	]
+		{ "type": "block", "code": "scaffolding-top-ns", "quantity": { "avg": 1 }  }
+	],
+    "heldTpIdleAnimation": "holdbothhandslarge",
+	"heldRightReadyAnimation": "heldblockready",
+	"heldTpUseAnimation": "twohandplaceblock",
+	"guiTransform": {
+		"rotation": { "x": -28, "y": -45.3, "z": 0 }
+	},
+	"tpHandTransform": {
+		"translation": { "x": -1.23, "y": -0.91, "z": -0.8 },
+		"rotation": { "x": -2, "y": 25, "z": -78 },
+		"scale": 0.4
+	},
+	"groundTransform": {
+		"translation": { "x": 0, "y": 0, "z": 0 },
+		"rotation": { "x": 0, "y": -45, "z": 0 },
+		"origin": { "x": 0.5, "y": 0, "z": 0.5 },
+		"scale": 1.5
+	}
 }

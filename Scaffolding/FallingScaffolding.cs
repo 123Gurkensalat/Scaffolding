@@ -68,6 +68,6 @@ internal class EntityFallingScaffolding : EntityBlockFalling
 
     public override ItemStack[] GetDrops(IWorldAccessor world, BlockPos pos, IPlayer byPlayer)
     {
-        return new ItemStack[] { new ItemStack(world.GetBlock(Block.CodeWithParts("plain", "ns")), 1) };
+        return new ItemStack[] { new ItemStack(world.GetBlock(Block.CodeWithParts("top", "ns")), 1) };
     }
 }
