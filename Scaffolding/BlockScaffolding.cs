@@ -282,7 +282,10 @@ internal class BlockScaffolding : Block
     {
         var block = api.World.BlockAccessor.GetBlock(pos);
         Block newBlock = api.World.GetBlock(block.CodeWithPart(GetTypeCode(pos), 1));
-        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        if (newBlock != null)
+        {
+            api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
     }
 
     private void UpdateOrientation(BlockPos pos, IPlayer player = null)
@@ -290,7 +293,10 @@ internal class BlockScaffolding : Block
         var (_, maxStabilityPos) = GetMaxStability(pos);
         var block = api.World.BlockAccessor.GetBlock(pos);
         Block newBlock = api.World.GetBlock(block.CodeWithParts(GetOrientationCode(pos, maxStabilityPos, player)));
-        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        if (newBlock != null)
+        {
+            api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
     }
 
     private void UpdateCode(BlockPos pos, IPlayer player = null)
@@ -298,7 +304,10 @@ internal class BlockScaffolding : Block
         var (_, maxStabilityPos) = GetMaxStability(pos);
         var block = api.World.BlockAccessor.GetBlock(pos);
         Block newBlock = api.World.GetBlock(block.CodeWithParts(GetTypeCode(pos), GetOrientationCode(pos, maxStabilityPos, player)));
-        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        if (newBlock != null)
+        {
+            api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
+        }
     }
 
     public BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)
