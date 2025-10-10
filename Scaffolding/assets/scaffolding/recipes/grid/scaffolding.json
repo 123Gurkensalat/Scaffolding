@@ -1,16 +1,15 @@
 {
-  "ingredientPattern": "_S_,S_S,___",
-  "width": 3,
-  "height": 3,
-  "ingredients": {
-    "S": {
-      "type": "item",
-      "code": "game:plank-*"
+    "ingredientPattern": "BBB,SRS,S_S",
+    "ingredients": {
+        "B": { "type": "item", "code": "game:plank-*" },
+        "R": { "type": "item", "code": "game:rope" },
+        "S": { "type": "item", "code": "game:stick" }
+    },
+    "width": 3,
+    "height": 3,
+    "output": {
+        "type": "block",
+        "code": "scaffolding-top-ns",
+        "quantity": 4
     }
-  },
-  "output": {
-    "type": "block",
-    "code": "scaffolding",
-    "quantity": 2
-  }
 }

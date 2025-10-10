@@ -5,7 +5,6 @@ using Scaffolding.BlockEntities;
 using Scaffolding.Patches;
 
 using HarmonyLib;
-using Vintagestory.API.Client;
 
 namespace Scaffolding;
 
@@ -29,14 +28,7 @@ public class ScaffoldingModSystem : ModSystem
 
         // load mod config
         ModConfig.LoadOrCreate(api);
-        BlockEntityScaffolding.MaxStability = ModConfig.Data.MaxStability;
-    }
-
-    public override void StartClientSide(ICoreClientAPI api)
-    {
-        base.StartClientSide(api);
-
-        // patch client
+        BlockScaffolding.MaxStability = ModConfig.Data.MaxStability;
     }
 
     public override void Dispose()

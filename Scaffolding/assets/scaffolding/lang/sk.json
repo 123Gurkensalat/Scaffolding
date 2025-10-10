@@ -1,4 +1,8 @@
 {
     "game:tabname-scaffolding": "Scaffolding",
+<<<<<<< HEAD
     "block-scaffolding-*": "Lešenie"
+=======
+    "block-scaffolding-*-*": "Lešenie"
+>>>>>>> 0294c8787f3bb6a5b717f9876a5a83dd199e783c
 }
