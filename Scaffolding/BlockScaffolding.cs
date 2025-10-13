@@ -1,6 +1,7 @@
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
+using Vintagestory.GameContent;
 
 using System.Collections.Generic;
 using System;
@@ -136,7 +137,7 @@ internal class BlockScaffolding : Block
     private void UpdateStability(BlockPos pos)
     {
         var entity = GetBlockEntity(pos);
-        if (entity.IsRoot)
+        if (entity.IsRoot && !(api.World.BlockAccessor.GetBlockEntity<BlockEntityMicroBlock>(pos.DownCopy())?.sideAlmostSolid[4] == true))
         {
             OnBlockBelowDestroyed(pos, entity);
         }
@@ -341,7 +342,9 @@ internal class BlockScaffolding : Block
             maxStability = currentEntity.Stability;
             maxPos = currentEntity.Pos;
         }
-        else if (api.World.BlockAccessor.IsSideSolid(pos.X, pos.Y - 1, pos.Z, BlockFacing.UP))
+        else if (
+            api.World.BlockAccessor.IsSideSolid(pos.X, pos.Y - 1, pos.Z, BlockFacing.UP) ||
+            api.World.BlockAccessor.GetBlockEntity<BlockEntityMicroBlock>(pos.DownCopy())?.sideAlmostSolid[4] == true)
         {
             return (MaxStability, pos.DownCopy());
         }
