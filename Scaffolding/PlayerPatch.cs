@@ -9,8 +9,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Generic;
 
-using Scaffolding.Blocks;
-
 namespace Scaffolding.Patches;
 
 public static class PlayerPatches
@@ -36,77 +34,48 @@ public static class PlayerPatches
             transpiler: h_transpiler != null ? new HarmonyMethod(h_transpiler) : null);
     }
 
-    private static bool IsLdloc(CodeInstruction instr)
-    {
-        return instr.opcode == OpCodes.Ldloc || instr.opcode == OpCodes.Ldloc_S ||
-               instr.opcode == OpCodes.Ldloc_0 || instr.opcode == OpCodes.Ldloc_1 ||
-               instr.opcode == OpCodes.Ldloc_2 || instr.opcode == OpCodes.Ldloc_3;
-    }
-
-    // Helper to convert ldloc opcode to index
-    private static int GetLdlocIndex(CodeInstruction instr)
-    {
-        if (instr.opcode == OpCodes.Ldloc_0) return 0;
-        if (instr.opcode == OpCodes.Ldloc_1) return 1;
-        if (instr.opcode == OpCodes.Ldloc_2) return 2;
-        if (instr.opcode == OpCodes.Ldloc_3) return 3;
-        if (instr.opcode == OpCodes.Ldloc || instr.opcode == OpCodes.Ldloc_S)
-        {
-            if (instr.operand == null)
-                throw new System.InvalidOperationException("ldloc or ldloc.s has null operand!");
-            if (instr.operand is LocalBuilder lb)
-                return lb.LocalIndex;
-
-            // Sometimes the operand might be an int (rare), handle that too
-            if (instr.operand is int i)
-                return i;
-
-            throw new System.InvalidOperationException($"Unsupported ldloc operand type: {instr.operand.GetType()}");
-        }
-
-        throw new System.InvalidOperationException("Unexpected ldloc opcode");
-    }
-
     private static IEnumerable<CodeInstruction> ClimbingTranspiler(IEnumerable<CodeInstruction> instructions)
     {
         var codes = new List<CodeInstruction>(instructions);
-        var getCollisionBoxes = AccessTools.Method(typeof(Block), nameof(Block.GetCollisionBoxes),
-            new[] { typeof(IBlockAccessor), typeof(BlockPos) });
+        var getCollisionBoxes = AccessTools.Method(typeof(Block), nameof(Block.GetCollisionBoxes), new[] { typeof(IBlockAccessor), typeof(BlockPos) });
+        var getBlock = AccessTools.Method(typeof(IBlockAccessor), nameof(IBlockAccessor.GetBlock), new[] { typeof(BlockPos), typeof(int) });
         var injectMethod = AccessTools.Method(typeof(PlayerPatches), nameof(InjectCustomCollisionBoxes));
+        var counter = 0; // used to tell at which GetCollisionBox call we are
 
         for (int i = 0; i < codes.Count; i++)
         {
             var code = codes[i];
             yield return code;
 
-            // Look for the first callvirt to GetCollisionBoxes
+            if (counter == 1 && (code.opcode == OpCodes.Callvirt || code.opcode == OpCodes.Call) && code.operand is MethodInfo mj && mj == getBlock)
+            {
+                yield return new CodeInstruction(OpCodes.Stloc, 26);
+                yield return new CodeInstruction(OpCodes.Ldloc, 26);
+            }
+
             if (code.opcode == OpCodes.Callvirt && code.operand is MethodInfo mi && mi == getCollisionBoxes)
             {
-                var locals = new List<int>();
-                for (int j = i - 1; j >= 0; j--)
+                switch (counter)
                 {
-                    var c = codes[j];
-                    if (IsLdloc(c))
-                    {
-                        locals.Add(GetLdlocIndex(c));
-                        if (locals.Count == 3) break;
-                    }
+                    case 0:
+                        yield return new CodeInstruction(OpCodes.Ldloc, 26);
+                        break;
+                    case 1:
+                        yield return new CodeInstruction(OpCodes.Ldloc, 26);
+                        break;
+                    case 2:
+                        yield return new CodeInstruction(OpCodes.Ldloc, 36);
+                        break;
+                    default:
+                        break;
                 }
-
-                locals.Reverse();
-
-                int blockIndex = locals[0];
-                int accessorIndex = locals[1];
-                int posIndex = locals[2];
-
-                // Push the locals onto the stack in order: block, accessor, pos
-                yield return new CodeInstruction(OpCodes.Ldloc, blockIndex);
-                yield return new CodeInstruction(OpCodes.Ldloc, accessorIndex);
-                yield return new CodeInstruction(OpCodes.Ldloc, posIndex);
+                yield return new CodeInstruction(OpCodes.Ldloc_2);
+                yield return new CodeInstruction(OpCodes.Ldloc, 4);
                 yield return new CodeInstruction(OpCodes.Ldarg_0);
 
                 // Call the helper method: InjectCustomCollisionBoxes(Cuboidf[], Block, IBlockAccessor, BlockPos)
                 yield return new CodeInstruction(OpCodes.Call, injectMethod);
+                counter++;
             }
         }
     }
