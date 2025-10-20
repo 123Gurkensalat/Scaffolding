@@ -10,6 +10,10 @@
         "scaffolding-top-ns": { "general": ["*"] }
     },
     "shapebytype": {
+        "*-top-ns": { "base": "block/scaffolding/top*", "rotatey": 0 },
+        "*-top-we": { "base": "block/scaffolding/top*", "rotatey": 90 },
+        "*-tb-ns": { "base": "block/scaffolding/tb*", "rotatey": 0 },
+        "*-tb-we": { "base": "block/scaffolding/tb*", "rotatey": 90 },
         "*-ns": { "base": "block/scaffolding/{type}", "rotatey": 0 },
         "*-we": { "base": "block/scaffolding/{type}", "rotatey": 90 }
     },
