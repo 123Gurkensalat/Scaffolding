@@ -438,6 +438,8 @@ internal class BlockScaffolding : Block
             if (visited.Contains(node)) continue;
             visited.Add(node);
 
+            if (nodeEntity == null) continue;
+
             if (!node.Equals(pos))
             {
                 reachable.Add(nodeEntity);
