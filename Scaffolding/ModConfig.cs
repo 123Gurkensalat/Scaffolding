@@ -8,7 +8,7 @@ namespace Scaffolding;
 
 public class ModConfigData
 {
-    public int MaxStability { get; set; } = 4;
+    public int MaxStability { get; set; } = 6;
 }
 
 public class ModConfig

@@ -137,15 +137,23 @@ internal class BlockScaffolding : Block
     private void UpdateStability(BlockPos pos)
     {
         var entity = GetBlockEntity(pos);
-        if (entity.IsRoot && !(api.World.BlockAccessor.GetBlockEntity<BlockEntityMicroBlock>(pos.DownCopy())?.sideAlmostSolid[4] == true))
+        bool isChiseledBlockSolid = api.World.BlockAccessor.GetBlockEntity<BlockEntityMicroBlock>(pos.DownCopy())?.sideAlmostSolid[4] == true;
+        api.Logger.Chat(isChiseledBlockSolid.ToString());
+        if (entity.IsRoot && !isChiseledBlockSolid)
         {
             OnBlockBelowDestroyed(pos, entity);
         }
         else
         {
             var (maxStability, maxStabilityPos) = GetMaxStability(pos);
-            entity.Stability = maxStability;
 
+            if (maxStability <= 0)
+            {
+                api.World.BlockAccessor.BreakBlock(pos, null);
+                return;
+            }
+
+            entity.Stability = maxStability;
             // block is root when it has max stability and is placed on solid ground
             bool isRoot = maxStability == MaxStability && GetBlockEntity(pos.DownCopy()) == null;
             entity.Root = isRoot ? pos : GetBlockEntity(maxStabilityPos).Root;
