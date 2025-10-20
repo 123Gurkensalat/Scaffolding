@@ -245,8 +245,11 @@ internal class BlockScaffolding : Block
 
     private string GetTypeCode(BlockPos pos)
     {
-        bool hasTop = api.World.BlockAccessor.GetBlockId(pos.UpCopy()) != 0;
-        bool hasBot = api.World.BlockAccessor.GetBlockId(pos.DownCopy()) != 0;
+        var topBlock = api.World.BlockAccessor.GetBlock(pos.UpCopy());
+        bool hasTop = topBlock is BlockScaffolding || topBlock?.SideOpaque[5] == true;
+
+        var botBlock = api.World.BlockAccessor.GetBlock(pos.DownCopy());
+        bool hasBot = botBlock is BlockScaffolding || botBlock?.SideOpaque[5] == true;
 
         if (hasTop && hasBot) return "plain";
         else if (hasTop) return "bot";

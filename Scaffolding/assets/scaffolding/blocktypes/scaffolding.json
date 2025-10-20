@@ -34,7 +34,8 @@
 		"all": false
 	},
     "sidesolid": {
-        "all": false 
+        "all": false,
+        "up": true
     },
     "rainPermeable": true,
     "lightAbsorption": 0,
