@@ -116,8 +116,11 @@ internal class BlockScaffolding : Block
         // place scaffolding and remove one from the players inventory
         string failureCode = "";
         BlockSelection newBlockSelection = new(current_pos, BlockFacing.UP, this);
-        var itemstack = byPlayer.WorldData.CurrentGameMode == EnumGameMode.Creative ? byPlayer.InventoryManager.ActiveHotbarSlot?.Itemstack : byPlayer.InventoryManager.ActiveHotbarSlot?.TakeOut(1);
-        TryPlaceBlock(world, byPlayer, itemstack, newBlockSelection, ref failureCode);
+        var itemslot = byPlayer.InventoryManager.ActiveHotbarSlot;
+        bool blockPlaced = TryPlaceBlock(world, byPlayer, itemslot?.Itemstack, newBlockSelection, ref failureCode);
+        if (blockPlaced && byPlayer.WorldData.CurrentGameMode != EnumGameMode.Creative) {
+            itemslot?.TakeOut(1);
+        }
     }
 
     public override void OnNeighbourBlockChange(IWorldAccessor world, BlockPos pos, BlockPos neibpos)
@@ -138,7 +141,6 @@ internal class BlockScaffolding : Block
     {
         var entity = GetBlockEntity(pos);
         bool isChiseledBlockSolid = api.World.BlockAccessor.GetBlockEntity<BlockEntityMicroBlock>(pos.DownCopy())?.sideAlmostSolid[4] == true;
-        api.Logger.Chat(isChiseledBlockSolid.ToString());
         if (entity.IsRoot && !isChiseledBlockSolid)
         {
             OnBlockBelowDestroyed(pos, entity);
