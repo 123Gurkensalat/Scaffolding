@@ -60,20 +60,18 @@ public static class PlayerPatches
                     case 0:
                         yield return new CodeInstruction(OpCodes.Ldloc, 26);
                         break;
-                    case 1:
-                        yield return new CodeInstruction(OpCodes.Ldloc, 26);
-                        break;
+                    case 1: // second appearence is lookahead collision (check collision at cur_pos + time_delta * move_vec)
+                        counter++;
+                        continue;
                     case 2:
-                        yield return new CodeInstruction(OpCodes.Ldloc, 36);
-                        break;
                     default:
                         break;
                 }
-                yield return new CodeInstruction(OpCodes.Ldloc_2);
-                yield return new CodeInstruction(OpCodes.Ldloc, 4);
                 yield return new CodeInstruction(OpCodes.Ldarg_0);
+                yield return new CodeInstruction(OpCodes.Ldloc_0);
+                yield return new CodeInstruction(OpCodes.Ldarg_2);
 
-                // Call the helper method: InjectCustomCollisionBoxes(Cuboidf[], Block, IBlockAccessor, BlockPos)
+                // Call the helper method: InjectCustomCollisionBoxes(Cuboidf[], Block, Instance, Entity, EntityControls)
                 yield return new CodeInstruction(OpCodes.Call, injectMethod);
                 counter++;
             }
@@ -83,18 +81,16 @@ public static class PlayerPatches
     /// <summary>
     /// Receives the original collision boxes and the block instance
     /// </summary>
-    public static Cuboidf[] InjectCustomCollisionBoxes(Cuboidf[] original, Block block, IBlockAccessor accessor, BlockPos pos, object instance)
+    public static Cuboidf[] InjectCustomCollisionBoxes(Cuboidf[] original, Block block, object instance, Entity entity, EntityControls controls)
     {
         if (instance is not EntityBehaviorPlayerPhysics) return original;
 
-        if (block == null || accessor == null || pos == null) return original;
+        if (block == null || entity == null || controls == null) return original;
 
-        if (block.WildCardMatch("scaffolding-*-*"))
-        {
-            var merged = new List<Cuboidf>(original ?? new Cuboidf[0]);
-            merged.AddRange(block.GetSelectionBoxes(accessor, pos));
-            return merged.ToArray();
-        }
+        if (!block.WildCardMatch("scaffolding-*-*")) return original;
+
+        controls.IsClimbing = true;
+        entity.ClimbingOnFace = null;
 
         return original;
     }
