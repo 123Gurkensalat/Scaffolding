@@ -1,12 +1,11 @@
 # Scaffolding
 
-This mod aims to implement Minecrafts scaffolding into Vintage Story!
+This mod adds Minecrafts scaffolding into Vintage Story!
 
-Currently this mod adds:
+Scaffolding is climbable while still being traversable.
+It has custom rules for building on existing scaffolding (see [here](https://minecraft.wiki/w/Scaffolding#Usage))
+When one scaffolding is broken, many others might start to collapse if they have insufficent stability.
 
-- A scaffolding block that is climbable and passthrough
-- Easy construction and destruction just like Minecrafts 
+You can change the maxDurability settings under ```/VintageStoryData/ModConfig/scaffolding.json``` 
 
-What I would like to add:
-
-- Better visuals. Especially for bridges
+For developers forking this repo, you can create a .env-file and set VINTAGE_STORY_MOD_FOLDER to your mod folder and use build.sh (if on linux) to automatically copy the compiled mod there.
