@@ -64,6 +64,8 @@ public static class PlayerPatches
                         counter++;
                         continue;
                     case 2:
+                        yield return new CodeInstruction(OpCodes.Ldloc, 37);
+                        break;
                     default:
                         break;
                 }

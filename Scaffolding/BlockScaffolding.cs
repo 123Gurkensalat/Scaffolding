@@ -140,29 +140,31 @@ internal class BlockScaffolding : Block
     private void UpdateStability(BlockPos pos)
     {
         var entity = GetBlockEntity(pos);
+
+        if (entity == null) return;
+
         bool isChiseledBlockSolid = api.World.BlockAccessor.GetBlockEntity<BlockEntityMicroBlock>(pos.DownCopy())?.sideAlmostSolid[4] == true;
         if (entity.IsRoot && !isChiseledBlockSolid)
         {
             OnBlockBelowDestroyed(pos, entity);
+            return;
         }
-        else
+
+        var (maxStability, maxStabilityPos) = GetMaxStability(pos);
+
+        if (maxStability <= 0)
         {
-            var (maxStability, maxStabilityPos) = GetMaxStability(pos);
-
-            if (maxStability <= 0)
-            {
-                api.World.BlockAccessor.BreakBlock(pos, null);
-                return;
-            }
-
-            entity.Stability = maxStability;
-            // block is root when it has max stability and is placed on solid ground
-            bool isRoot = maxStability == MaxStability && GetBlockEntity(pos.DownCopy()) == null;
-            entity.Root = isRoot ? pos : GetBlockEntity(maxStabilityPos).Root;
-
-            // Updates surrounding stability and root
-            PropogateStability(entity, true);
+            api.World.BlockAccessor.BreakBlock(pos, null);
+            return;
         }
+
+        entity.Stability = maxStability;
+        // block is root when it has max stability and is placed on solid ground
+        bool isRoot = maxStability == MaxStability && GetBlockEntity(pos.DownCopy()) == null;
+        entity.Root = isRoot ? pos : GetBlockEntity(maxStabilityPos).Root;
+
+        // Updates surrounding stability and root
+        PropogateStability(entity, true);
     }
 
     private void OnBlockBelowDestroyed(BlockPos pos, BlockEntityScaffolding entity)
@@ -199,7 +201,7 @@ internal class BlockScaffolding : Block
 
         foreach (var node in reachable)
         {
-            if (node.Root != null && node.Stability > 0)
+            if (node != null && node.Root != null && node.Stability > 0)
             {
                 UpdateCode(pos);
             }
@@ -208,7 +210,7 @@ internal class BlockScaffolding : Block
 
     public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1)
     {
-        if (GetBlockEntity(pos).Stability <= 0)
+        if (GetBlockEntity(pos)?.Stability <= 0)
         {
             base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
             return;
@@ -238,8 +240,10 @@ internal class BlockScaffolding : Block
 
         foreach (var node in reachable)
         {
-            if (node.Root != null && node.Stability > 0)
+            if (node != null && node.Root != null && node.Stability > 0)
+            {
                 UpdateCode(node.Pos);
+            }
         }
 
         base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
@@ -295,33 +299,33 @@ internal class BlockScaffolding : Block
     private void UpdateType(BlockPos pos)
     {
         var block = api.World.BlockAccessor.GetBlock(pos);
+        if (block == null) return;
+
         Block newBlock = api.World.GetBlock(block.CodeWithPart(GetTypeCode(pos), 1));
-        if (newBlock != null)
-        {
-            api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
-        }
+        if (newBlock == null) return;
+        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
     }
 
     private void UpdateOrientation(BlockPos pos, IPlayer player = null)
     {
-        var (_, maxStabilityPos) = GetMaxStability(pos);
         var block = api.World.BlockAccessor.GetBlock(pos);
+        if (block == null) return;
+
+        var (_, maxStabilityPos) = GetMaxStability(pos);
         Block newBlock = api.World.GetBlock(block.CodeWithParts(GetOrientationCode(pos, maxStabilityPos, player)));
-        if (newBlock != null)
-        {
-            api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
-        }
+        if (newBlock == null) return;
+        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
     }
 
     private void UpdateCode(BlockPos pos, IPlayer player = null)
     {
-        var (_, maxStabilityPos) = GetMaxStability(pos);
         var block = api.World.BlockAccessor.GetBlock(pos);
+        if (block == null) return;
+
+        var (_, maxStabilityPos) = GetMaxStability(pos);
         Block newBlock = api.World.GetBlock(block.CodeWithParts(GetTypeCode(pos), GetOrientationCode(pos, maxStabilityPos, player)));
-        if (newBlock != null)
-        {
-            api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
-        }
+        if (newBlock == null) return;
+        api.World.BlockAccessor.ExchangeBlock(newBlock.Id, pos);
     }
 
     public BlockEntityScaffolding GetBlockEntity(BlockPos blockPos)
@@ -487,12 +491,12 @@ internal class BlockScaffolding : Block
                 if (visited.Contains(neighbour.Pos)) continue;
 
                 if (neighbour.Stability < nodeEntity.Stability
-                        && neighbour.Root.Equals(nodeEntity.Root))
+                        && Object.ReferenceEquals(neighbour.Root, nodeEntity.Root))
                 {
                     queue.Enqueue(neighbour.Pos);
                 }
                 else if (neighbour.Stability >= nodeEntity.Stability
-                        || !neighbour.Root.Equals(nodeEntity.Root))
+                        || !Object.ReferenceEquals(neighbour.Root, nodeEntity.Root))
                 {
                     neighbours.Add(neighbour);
                     visited.Add(neighbour.Pos);
