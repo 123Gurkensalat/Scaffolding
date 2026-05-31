@@ -122,7 +122,7 @@ public static class PlayerPatches
         // prevent sliding on the ground
         if (controls.Sneak && (Math.Abs(entity.Pos.Motion.Y) <= 0.01f || entity.OnGround)) return false; 
 
-        foreach (var (blockPos, facing, _) in IterateBlocksInRange(entity.Pos, 0.5f)) 
+        foreach (var (blockPos, facing, _) in IterateBlocksInRange(entity.Pos, ModConfig.Data(Api).ClimbDistance)) 
         {
             Block block = blockAccessor.GetBlock(blockPos);
             if (!block?.WildCardMatch("scaffolding-*-*") ?? true) continue;
@@ -135,7 +135,7 @@ public static class PlayerPatches
         return false;
     }
 
-    private static List<(BlockPos, BlockFacing, double)> IterateBlocksInRange(EntityPos pos, float r) 
+    private static List<(BlockPos, BlockFacing, double)> IterateBlocksInRange(EntityPos pos, double r) 
     {
         int min_x = (int)Math.Floor(pos.X - r);
         int max_x = (int)Math.Floor(pos.X + r);
@@ -177,9 +177,9 @@ public static class PlayerPatches
         return playerPos.SquareDistanceTo(closest_x, playerPos.Y, closest_z);
     }
 
-    private static double GetClimbUpMult(bool isClimbingOnScaffolding) => isClimbingOnScaffolding? ModConfig.Data.ClimbUpSpeedMult : 1.0;
-    private static double GetClimbDownMult(bool isClimbingOnScaffolding) => isClimbingOnScaffolding? ModConfig.Data.ClimbDownSpeedMult : 1.0;
-    private static double GetHorizontalMult(bool isClimbingOnScaffolding) => isClimbingOnScaffolding? ModConfig.Data.HorizontalSpeedMult : 1.0;
+    private static double GetClimbUpMult(bool isClimbingOnScaffolding) => isClimbingOnScaffolding? ModConfig.Data(Api).ClimbUpSpeedMult : 1.0;
+    private static double GetClimbDownMult(bool isClimbingOnScaffolding) => isClimbingOnScaffolding? ModConfig.Data(Api).ClimbDownSpeedMult : 1.0;
+    private static double GetHorizontalMult(bool isClimbingOnScaffolding) => isClimbingOnScaffolding? ModConfig.Data(Api).HorizontalSpeedMult : 1.0;
 
     private static EntityPos ApplyHorizontalMult(EntityPos pos, bool isClimbingOnScaffolding) 
     {

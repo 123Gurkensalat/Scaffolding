@@ -12,16 +12,7 @@ namespace Scaffolding.Blocks;
 
 internal class BlockScaffolding : Block
 {
-    private static int? _maxStability = null;
-    public static int MaxStability
-    {
-        get
-        {
-            _maxStability ??= 6;
-            return _maxStability ?? 6;
-        }
-        set { _maxStability ??= value; }
-    }
+    int MaxStability => ModConfig.Data(api).MaxStability;
 
     public override bool TryPlaceBlock(IWorldAccessor world, IPlayer byPlayer, ItemStack itemstack, BlockSelection blockSel, ref string failureCode)
     {

@@ -4,8 +4,11 @@ using Vintagestory.API.Config;
 using System.IO;
 using System.Text.Json;
 
+using ProtoBuf;
+
 namespace Scaffolding;
 
+[ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class ModConfigData
 {
     public int MaxStability { get; set; } = 6;
@@ -17,7 +20,9 @@ public class ModConfigData
 
 public class ModConfig
 {
-    public static ModConfigData Data { get; private set; }
+    public static ModConfigData ServerConfig;
+    public static ModConfigData ClientConfig;
+    public static ModConfigData Data(ICoreAPI api) => api.Side == EnumAppSide.Server? ServerConfig : ClientConfig;
     public static void LoadOrCreate(ICoreAPI api)
     {
         var path = Path.Combine(GamePaths.ModConfig, "scaffolding.json");
@@ -27,23 +32,23 @@ public class ModConfig
             if (!File.Exists(path))
             {
                 // Save default config if none exists
-                Data = new ModConfigData();
-                var json = JsonSerializer.Serialize(Data, new JsonSerializerOptions { WriteIndented = true });
+                ServerConfig = new ModConfigData();
+                var json = JsonSerializer.Serialize(ServerConfig, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
                 api.Logger.Notification("[Scaffolding] Created default config file at {0}", path);
             }
             else
             {
                 var json = File.ReadAllText(path);
-                Data = JsonSerializer.Deserialize<ModConfigData>(json);
-                json = JsonSerializer.Serialize(Data, new JsonSerializerOptions { WriteIndented = true });
+                ServerConfig = JsonSerializer.Deserialize<ModConfigData>(json) ?? new();
+                json = JsonSerializer.Serialize(ServerConfig, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
                 api.Logger.Notification("[Scaffolding] Loaded config file from {0}", path);
             }
         }
         else
         {
-            Data = new ModConfigData(); // client doesn't need the config usually
+            ClientConfig = new ModConfigData(); // client doesn't need the config usually
         }
     }
 }

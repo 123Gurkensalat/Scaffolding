@@ -1,5 +1,6 @@
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
+using Vintagestory.API.Client;
 using Scaffolding.Blocks;
 using Scaffolding.BlockEntities;
 using Scaffolding.Patches;
@@ -17,7 +18,6 @@ public class ScaffoldingModSystem : ModSystem
         base.Start(api);
         api.RegisterBlockClass("scaffolding:scaffolding", typeof(BlockScaffolding));
         api.RegisterBlockEntityClass("scaffolding:scaffolding", typeof(BlockEntityScaffolding));
-        ModConfig.LoadOrCreate(api);
         PlayerPatches.Api = api;
         harmony = new Harmony(Mod.Info.ModID);
         PlayerPatches.ApplyAll(harmony);
@@ -26,7 +26,22 @@ public class ScaffoldingModSystem : ModSystem
     public override void StartServerSide(ICoreServerAPI api)
     {
         base.StartServerSide(api);
-        BlockScaffolding.MaxStability = ModConfig.Data.MaxStability;
+        ModConfig.LoadOrCreate(api);
+        var serverChannel = api.Network.RegisterChannel("scaffolding_config").RegisterMessageType<ModConfigData>();
+        api.Event.PlayerJoin += player => serverChannel.SendPacket(ModConfig.ServerConfig, player);
+    }
+
+    public override void StartClientSide(ICoreClientAPI api)
+    {
+        base.StartClientSide(api);
+        ModConfig.LoadOrCreate(api);
+        var clientChannel = api.Network.RegisterChannel("scaffolding_config").RegisterMessageType<ModConfigData>();
+        clientChannel.SetMessageHandler<ModConfigData>(config => OnConfigReceived(config, api));
+    }
+
+    private void OnConfigReceived(ModConfigData config, ICoreAPI api)
+    {
+        ModConfig.ClientConfig = config;       
     }
 
     public override void Dispose()
