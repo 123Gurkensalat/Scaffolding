@@ -12,6 +12,7 @@ public class ModConfigData
     public double HorizontalSpeedMult { get; set; } = 1.0;
     public double ClimbUpSpeedMult { get; set; } = 1.0;
     public double ClimbDownSpeedMult { get; set; } = 1.0;
+    public double ClimbDistance { get; set; } = 0.5;
 }
 
 public class ModConfig

@@ -17,6 +17,7 @@ public class ScaffoldingModSystem : ModSystem
         base.Start(api);
         api.RegisterBlockClass("scaffolding:scaffolding", typeof(BlockScaffolding));
         api.RegisterBlockEntityClass("scaffolding:scaffolding", typeof(BlockEntityScaffolding));
+        ModConfig.LoadOrCreate(api);
         PlayerPatches.Api = api;
         harmony = new Harmony(Mod.Info.ModID);
         PlayerPatches.ApplyAll(harmony);
@@ -25,9 +26,6 @@ public class ScaffoldingModSystem : ModSystem
     public override void StartServerSide(ICoreServerAPI api)
     {
         base.StartServerSide(api);
-
-        // load mod config
-        ModConfig.LoadOrCreate(api);
         BlockScaffolding.MaxStability = ModConfig.Data.MaxStability;
     }
 
