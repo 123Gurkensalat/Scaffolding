@@ -33,9 +33,10 @@
 	"sideopaque": {
 		"all": false
 	},
-    "sidesolid": {
-        "all": false,
-        "up": true
+    "sidesolidbytype": {
+        "scaffolding-top-*": { "all": false, "up": true },
+        "scaffolding-tb-*": { "all": false, "up": true },
+        "scaffolding-*": { "all": false }
     },
     "rainPermeable": true,
     "lightAbsorption": 0,

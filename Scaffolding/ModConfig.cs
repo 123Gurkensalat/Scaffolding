@@ -9,6 +9,9 @@ namespace Scaffolding;
 public class ModConfigData
 {
     public int MaxStability { get; set; } = 6;
+    public double HorizontalSpeedMult { get; set; } = 1.0;
+    public double ClimbUpSpeedMult { get; set; } = 1.0;
+    public double ClimbDownSpeedMult { get; set; } = 1.0;
 }
 
 public class ModConfig
@@ -32,6 +35,8 @@ public class ModConfig
             {
                 var json = File.ReadAllText(path);
                 Data = JsonSerializer.Deserialize<ModConfigData>(json);
+                json = JsonSerializer.Serialize(Data, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(path, json);
                 api.Logger.Notification("[Scaffolding] Loaded config file from {0}", path);
             }
         }
