@@ -8,7 +8,7 @@ public class BlockEntityScaffolding : BlockEntity
 {
     public int Stability { get; set; }
     public BlockPos Root = null;
-    public bool IsRoot => Root.Equals(Pos);
+    public bool IsRoot => Root?.Equals(Pos) ?? false;
 
     public override void ToTreeAttributes(ITreeAttribute tree)
     {
