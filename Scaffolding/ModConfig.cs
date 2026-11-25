@@ -39,8 +39,19 @@ public class ModConfig
             }
             else
             {
-                var json = File.ReadAllText(path);
-                ServerConfig = JsonSerializer.Deserialize<ModConfigData>(json) ?? new();
+                ServerConfig = new ModConfigData();
+                
+                // try to load excisting data, otherwise keep default data and overwrite file
+                try
+                {
+                    var json = File.ReadAllText(path);
+                    ServerConfig = JsonSerializer.Deserialize<ModConfigData>(json) ?? new();
+                }
+                catch (System.Exception)
+                {
+                    api.Logger.Notification("[Scaffolding] Could not read from {0}. Overwriting potentially corrupted file with default config", path);
+                }
+
                 json = JsonSerializer.Serialize(ServerConfig, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
                 api.Logger.Notification("[Scaffolding] Loaded config file from {0}", path);
